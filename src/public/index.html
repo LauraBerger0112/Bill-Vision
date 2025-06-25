@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BillVision</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BillVision</h1>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#bills">Contas</a></li>
+                    <li><a href="#reports">Relatórios</a></li>
+                    <li><a href="#settings">Configurações</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <section id="dashboard">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Total de Contas</h3>
+                        <p id="total-bills">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Contas Pendentes</h3>
+                        <p id="pending-bills">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Pago</h3>
+                        <p id="total-paid">R$ 0,00</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="bills">
+                <h2>Gerenciar Contas</h2>
+                <form id="bill-form">
+                    <input type="text" id="bill-name" placeholder="Nome da conta" required>
+                    <input type="number" id="bill-value" placeholder="Valor" required>
+                    <input type="date" id="bill-date" required>
+                    <select id="bill-category" required>
+                        <option value="">Selecione uma categoria</option>
+                        <option value="alimentacao">Alimentação</option>
+                        <option value="moradia">Moradia</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="lazer">Lazer</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                    <button type="submit">Adicionar Conta</button>
+                </form>
+
+                <div class="bills-list">
+                    <h3>Lista de Contas</h3>
+                    <table id="bills-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Valor</th>
+                                <th>Data</th>
+                                <th>Categoria</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bills-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="reports">
+                <h2>Relatórios</h2>
+                <div class="reports-container">
+                    <div class="chart-container">
+                        <canvas id="category-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthly-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="settings">
+                <h2>Configurações</h2>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="currency">Moeda:</label>
+                        <select id="currency">
+                            <option value="BRL">Real (BRL)</option>
+                            <option value="USD">Dólar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="theme">Tema:</label>
+                        <select id="theme">
+                            <option value="light">Claro</option>
+                            <option value="dark">Escuro</option>
+                        </select>
+                    </div>
+                    <button type="submit">Salvar Configurações</button>
+                </form>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 

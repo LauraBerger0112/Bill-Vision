@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Vision</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Tela de Login/Cadastro (inicialmente visível) -->
+    <div id="auth-screen">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Cadastro</button>
+            </div>
+            
+            <form id="login-form" class="auth-form active">
+                <h2>Login</h2>
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha:</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+
+            <form id="register-form" class="auth-form">
+                <h2>Cadastro</h2>
+                <div class="form-group">
+                    <label for="register-name">Nome:</label>
+                    <input type="text" id="register-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Senha:</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm-password">Confirmar Senha:</label>
+                    <input type="password" id="register-confirm-password" required>
+                </div>
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal (inicialmente oculto) -->
+    <div id="main-content" class="hidden">
+        <header>
+            <nav>
+                <div class="logo">BILL VISION</div>
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-item" id="reports-tab">Relatórios</a></li>
+                    <li><a href="#" class="nav-item" id="graph-tab">Gráfico Mensal</a></li>
+                    <li><a href="#" class="nav-item" id="theme-toggle">Tema Escuro</a></li>
+                    <li><a href="#" class="nav-item" id="logout">Sair</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <section id="reports-section" class="active-section">
+                <div class="report-section">
+                    <h1>Análise de Faturas</h1>
+                    <form id="report-form">
+                        <div class="form-group">
+                            <label for="projectName">Nome do Projeto/Equipe/Setor:</label>
+                            <input type="text" id="projectName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="referenceMonth">Mês/Ano de Referência:</label>
+                            <input type="month" id="referenceMonth" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="responsiblePerson">Responsável pelo Relatório:</label>
+                            <input type="text" id="responsiblePerson" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="summary">Resumo do Mês:</label>
+                            <textarea id="summary" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="completedActivities">Atividades Concluídas:</label>
+                            <textarea id="completedActivities" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="criticalExpenses">Gastos Críticos:</label>
+                            <textarea id="criticalExpenses" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="plannedVsAchieved">Planejado vs. Atingido:</label>
+                            <textarea id="plannedVsAchieved" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="problems">Problemas/Obstáculos:</label>
+                            <textarea id="problems" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="attachments">Anexos:</label>
+                            <input type="file" id="attachments" multiple>
+                        </div>
+
+                        <button type="submit">Gerar Relatório</button>
+                    </form>
+                </div>
+
+                <section class="reports-list">
+                    <h2>Relatórios Gerados</h2>
+                    <div id="reports-container">
+                        <!-- Os relatórios serão inseridos aqui via JavaScript -->
+                    </div>
+                </section>
+            </section>
+
+            <section id="graph-section" class="hidden-section">
+                <div class="graph-container">
+                    <h1>Gráfico Mensal de Relatórios</h1>
+                    <div class="chart-wrapper">
+                        <canvas id="reportsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
