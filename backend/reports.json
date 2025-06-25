@@ -1,0 +1,50 @@
+[
+  {
+    "projectName": "Desenvolvimento e Manutenção Web ",
+    "referenceMonth": "2025-04",
+    "responsiblePerson": "Roberta Menezes",
+    "summary": "Durante o mês de abril de 2025, a Tech Solutions Ltda. realizou o desenvolvimento completo do site institucional da Empresa Alfa, além da manutenção preventiva dos servidores e a renovação da licença de firewall corporativo. Foi registrado um pagamento parcial de R$ 5.000,00 referente aos serviços contratados, restando um saldo de R$ 3.750,00 a ser quitado até 10/05/2025. Todas as atividades foram concluídas dentro dos prazos estabelecidos, garantindo a continuidade dos serviços digitais do cliente.",
+    "completedActivities": [
+      "Durante o mês de abril de 2025, a Tech Solutions Ltda. concluiu o desenvolvimento do site institucional da Empresa Alfa, entregando todas as páginas, conteúdos e funcionalidades previstas no projeto. Também foi realizada a manutenção preventiva dos servidores da empresa, incluindo atualizações de sistema, correções de segurança e otimizações de desempenho, conforme o cronograma acordado. Além disso, foi efetuada a renovação da licença do software de firewall corporativo, garantindo a proteção dos dados e da rede interna por mais 12 meses."
+    ],
+    "criticalExpenses": [
+      "Desenvolvimento do Site Institucional (R$ 6.000,00):",
+      "É um gasto crítico porque a entrega do site é central para a comunicação e a presença online da Empresa Alfa. Sem ele, a empresa ficaria sem uma ferramenta essencial de marketing e relacionamento com clientes.",
+      "",
+      "Licença de Software (Firewall) (R$ 750,00):",
+      "Apesar de ter um valor menor, é um gasto crítico porque está diretamente ligado à segurança dos dados e da rede da empresa. Sem o firewall atualizado, a Empresa Alfa correria sérios riscos de ataques cibernéticos."
+    ],
+    "plannedVsAchieved": "Durante o mês de abril de 2025, a Tech Solutions Ltda. estabeleceu uma série de metas para a execução dos serviços para a Empresa Alfa. Em relação ao desenvolvimento do site institucional, o planejamento era entregar o site completo até o dia 25/04/2025. No entanto, o site foi entregue antes do prazo, em 24/04/2025, cumprindo a meta com sucesso. A manutenção preventiva dos servidores também estava prevista para ser realizada até o dia 20/04/2025, e foi concluída com êxito em 18/04/2025, conforme o cronograma.\n\nA renovação da licença do software de firewall estava planejada para ser feita até 30/04/2025, mas, para garantir a continuidade da segurança, a renovação foi antecipada e realizada em 19/04/2025, evitando qualquer risco à proteção da rede interna da empresa.\n\nPorém, em relação ao recebimento do pagamento, o objetivo era receber 100% do valor até 30/04/2025. Até o momento, foi recebido apenas 57% do valor total da fatura, ou seja, R$ 5.000,00, ficando um saldo de R$ 3.750,00 pendente. Este valor deverá ser pago até o dia 10/05/2025.",
+    "problems": [
+      "Alguns problemas possíveis incluem atrasos imprevistos nas entregas devido a questões técnicas ou mudanças de última hora, além de falhas que possam surgir nos serviços prestados, como erros no site ou instabilidade nos servidores. Em relação ao pagamento, o saldo pendente de R$ 3.750,00 pode sofrer atraso, o que afetaria o fluxo de caixa da empresa. Também pode haver problemas de comunicação com o cliente ou dificuldades no processo de pagamento, como erros em transferências bancárias. Mudanças no escopo do projeto também são uma possibilidade que pode gerar custos adicionais e atrasos."
+    ],
+    "attachments": [
+      "relatorio_fatura_abril_2025.pdf"
+    ],
+    "id": "1745874041563",
+    "createdAt": "2025-04-28T21:00:41.564Z"
+  },
+  {
+    "projectName": "Consultoria Financeira - Empresa Beta",
+    "referenceMonth": "2025-03",
+    "responsiblePerson": "João Souza",
+    "summary": "estratégico financeiro para a Empresa Beta. Foram realizadas reuniões mensais de acompanhamento, análise de fluxo de caixa e a definição de estratégias de otimização de investimentos. As atividades foram realizadas conforme o cronograma, com todas as entregas atendendo às expectativas do cliente.",
+    "completedActivities": [
+      "A análise detalhada do fluxo de caixa da Empresa Beta foi concluída com sucesso, resultando em um relatório com recomendações para melhorar a rentabilidade. O planejamento estratégico de investimentos também foi entregue, abordando opções para crescimento no longo prazo. Além disso, as reuniões de acompanhamento mensal ocorreram conforme o previsto, sendo bem recebidas pela empresa."
+    ],
+    "criticalExpenses": [
+      "Material de escritório: R$150,00",
+      "Custo de Impressão de Relatórios: R$100,00",
+      "Deslocamento para reuniões presenciais: R$250,00"
+    ],
+    "plannedVsAchieved": "O planejamento inicial indicava a conclusão da análise de fluxo de caixa até 15/03/2025, mas a entrega foi antecipada para 10/03/2025. O planejamento estratégico de investimentos estava previsto para ser entregue até 20/03/2025 e foi entregue no prazo estipulado. Quanto ao pagamento, 50% do valor foi pago até 10/03/2025, e o saldo restante foi pago parcialmente até o dia 28/03/2025.",
+    "problems": [
+      "A falta de documentos necessários para a análise financeira, o que poderia causar atrasos na entrega do relatório. O atraso no pagamento do saldo restante de 50% também é uma possibilidade, o que poderia afetar a continuidade dos serviços prestados. Além disso, a falta de clareza nas recomendações do planejamento financeiro poderia levar a dúvidas do cliente, necessitando de mais reuniões ou explicações adicionais."
+    ],
+    "attachments": [
+      "relatorio_fatura_marco_2025.pdf"
+    ],
+    "id": "1745875115426",
+    "createdAt": "2025-04-28T21:18:35.427Z"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1745880778824",
+    "name": "Melissa",
+    "email": "melissambelmiro@gmail.com",
+    "password": "$2b$10$4mU2ulpoqopojBoNtypxJ.3IevGurSyOLCLIIynxAq6TAXYV8wpx.",
+    "createdAt": "2025-04-28T22:52:58.824Z"
+  },
+  {
+    "id": "1745961005856",
+    "name": "Melissa",
+    "email": "melissa.belmiro@etec.sp.gov.br",
+    "password": "$2b$10$ccXkHK/Hmt0w6CIRNZbQI.o728nkC2OAg890yV4sxPBg2K3r7n6y2",
+    "createdAt": "2025-04-29T21:10:05.858Z"
+  }
+]
