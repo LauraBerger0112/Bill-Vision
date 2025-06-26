@@ -208,4 +208,14 @@ body.dark-theme th {
 
 body.dark-theme td {
     border-color: #4d4d4d;
+}
+
+.error-message {
+    color: #fff;
+    background-color: #e74c3c;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
 } 
