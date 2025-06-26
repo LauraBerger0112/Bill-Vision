@@ -204,6 +204,89 @@ document.addEventListener('DOMContentLoaded', () => {
             reportsChart.destroy();
         }
 
+        // Process expenses data
+        const expensesByEstablishment = {};
+        const expensesByMonth = {};
+        
+        reports.forEach(report => {
+            report.criticalExpenses.forEach(expense => {
+                const match = expense.match(/^(.+):\s*R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2})$/);
+                if (match) {
+                    const establishment = match[1].trim();
+                    const value = parseFloat(match[2].replace('.', '').replace(',', '.'));
+                    const month = report.referenceMonth;
+
+                    // Update total by establishment
+                    if (!expensesByEstablishment[establishment]) {
+                        expensesByEstablishment[establishment] = 0;
+                    }
+                    expensesByEstablishment[establishment] += value;
+
+                    // Update monthly data
+                    if (!expensesByMonth[establishment]) {
+                        expensesByMonth[establishment] = {};
+                    }
+                    if (!expensesByMonth[establishment][month]) {
+                        expensesByMonth[establishment][month] = 0;
+                    }
+                    expensesByMonth[establishment][month] += value;
+                }
+            });
+        });
+
+        // Sort establishments by total expense
+        const sortedEstablishments = Object.entries(expensesByEstablishment)
+            .sort((a, b) => b[1] - a[1]);
+
+        // Calculate month-over-month changes
+        const monthChanges = {};
+        Object.entries(expensesByMonth).forEach(([establishment, monthlyData]) => {
+            const months = Object.keys(monthlyData).sort();
+            if (months.length >= 2) {
+                const currentMonth = months[months.length - 1];
+                const previousMonth = months[months.length - 2];
+                const currentValue = monthlyData[currentMonth];
+                const previousValue = monthlyData[previousMonth];
+                const change = ((currentValue - previousValue) / previousValue) * 100;
+                monthChanges[establishment] = change;
+            }
+        });
+
+        // Create ranking table
+        const rankingContainer = document.getElementById('expenses-ranking');
+        if (!rankingContainer) {
+            const newRankingContainer = document.createElement('div');
+            newRankingContainer.id = 'expenses-ranking';
+            document.querySelector('.chart-wrapper').appendChild(newRankingContainer);
+        }
+
+        const rankingHTML = `
+            <h3>Ranking de Gastos por Estabelecimento</h3>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Estabelecimento</th>
+                        <th>Total Gasto (R$)</th>
+                        <th>Variação Mês Anterior</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sortedEstablishments.map(([establishment, total]) => `
+                        <tr>
+                            <td>${establishment}</td>
+                            <td>R$ ${total.toFixed(2)}</td>
+                            <td class="${monthChanges[establishment] < 0 ? 'decrease' : 'increase'}">
+                                ${monthChanges[establishment] ? `${monthChanges[establishment].toFixed(1)}%` : 'N/A'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        document.getElementById('expenses-ranking').innerHTML = rankingHTML;
+
+        // Continue with the existing chart code
         const monthlyData = {};
         reports.forEach(report => {
             const month = report.referenceMonth;
@@ -417,11 +500,30 @@ document.addEventListener('DOMContentLoaded', () => {
     reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const criticalExpenses = document.getElementById('criticalExpenses').value.split('\n');
+        // Processar gastos por empresa
+        const companyExpenses = [];
+        const companyExpensesContainer = document.getElementById('company-expenses-container');
+        const expenseRows = companyExpensesContainer.querySelectorAll('.expense-row');
         
-        if (!validateCriticalExpenses(criticalExpenses)) {
-            return;
-        }
+        expenseRows.forEach(row => {
+            const company = row.querySelector('.company-name').value.trim();
+            const value = row.querySelector('.expense-value').value.trim();
+            const categories = [];
+            
+            // Coletar categorias
+            const categoryItems = row.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                categories.push(item.textContent.trim());
+            });
+
+            if (company && value) {
+                companyExpenses.push(`${company}: R$ ${value}`);
+                // Adicionar detalhes das categorias
+                if (categories.length > 0) {
+                    companyExpenses.push(`Categorias: ${categories.join(' | ')}`);
+                }
+            }
+        });
         
         const formData = {
             projectName: document.getElementById('projectName').value,
@@ -429,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             responsiblePerson: document.getElementById('responsiblePerson').value,
             summary: document.getElementById('summary').value,
             completedActivities: document.getElementById('completedActivities').value.split('\n'),
-            criticalExpenses: criticalExpenses,
+            criticalExpenses: companyExpenses,
             plannedVsAchieved: document.getElementById('plannedVsAchieved').value,
             problems: document.getElementById('problems').value.split('\n'),
             attachments: Array.from(document.getElementById('attachments').files).map(file => file.name)
@@ -447,6 +549,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 alert('Relatório enviado com sucesso!');
                 reportForm.reset();
+                // Limpar o container de empresas
+                document.getElementById('company-expenses-container').innerHTML = '';
+                // Adicionar o primeiro campo de empresa novamente
+                addCompanyExpenseField();
 
                 const novoRelatorio = { ...formData };
                 const data = await response.json();
@@ -465,23 +571,120 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const criticalExpensesInput = document.getElementById('criticalExpenses');
-    criticalExpensesInput.placeholder = "";
+    // Função para adicionar campo de gasto por empresa
+    function addCompanyExpenseField() {
+        const container = document.getElementById('company-expenses-container');
+        const row = document.createElement('div');
+        row.className = 'expense-row';
+        row.innerHTML = `
+            <div class="company-input-group">
+                <input type="text" class="company-name" placeholder="Nome da Empresa" required>
+                <div class="expense-categories" style="display: none;">
+                    <div class="category-inputs">
+                        <select class="category-select">
+                            <option value="">Selecione uma categoria</option>
+                            <option value="alimentacao">Alimentação</option>
+                            <option value="lazer">Lazer</option>
+                            <option value="transporte">Transporte</option>
+                            <option value="moradia">Moradia</option>
+                            <option value="saude">Saúde</option>
+                            <option value="educacao">Educação</option>
+                            <option value="vestuario">Vestuário</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                        <input type="text" class="category-value" placeholder="Valor da categoria (ex: 50,00)">
+                        <button type="button" class="add-category-btn">+</button>
+                    </div>
+                    <div class="categories-list"></div>
+                </div>
+            </div>
+            <input type="text" class="expense-value" placeholder="Valor Total (ex: 150,00)" required readonly>
+            <button type="button" class="remove-expense" onclick="this.parentElement.remove()">Remover</button>
+        `;
+        container.appendChild(row);
 
-    const formGroup = criticalExpensesInput.closest('.form-group');
-    const helpText = document.createElement('div');
-    helpText.className = 'help-text';
-    helpText.innerHTML = `
-        <p>Formato obrigatório para cada gasto:</p>
-        <p class="example">Descrição: R$ X,XX</p>
-        <p>Exemplos válidos:</p>
-        <ul>
-            <li>Material de escritório: R$ 150,00</li>
-            <li>Serviços de TI: R$ 2.500,00</li>
-            <li>Aluguel: R$ 1.000,00</li>
-        </ul>
+        // Configurar eventos
+        const companyInput = row.querySelector('.company-name');
+        const categoriesDiv = row.querySelector('.expense-categories');
+        const categorySelect = row.querySelector('.category-select');
+        const categoryValue = row.querySelector('.category-value');
+        const addCategoryBtn = row.querySelector('.add-category-btn');
+        const categoriesList = row.querySelector('.categories-list');
+        const totalValue = row.querySelector('.expense-value');
+
+        // Mostrar categorias quando digitar o nome da empresa
+        companyInput.addEventListener('input', () => {
+            categoriesDiv.style.display = companyInput.value.trim() ? 'block' : 'none';
+        });
+
+        // Adicionar categoria
+        addCategoryBtn.addEventListener('click', () => {
+            const category = categorySelect.value;
+            const value = categoryValue.value.trim();
+            
+            if (category && value) {
+                const categoryItem = document.createElement('div');
+                categoryItem.className = 'category-item';
+                categoryItem.innerHTML = `
+                    <span>${categorySelect.options[categorySelect.selectedIndex].text}: R$ ${value}</span>
+                    <button type="button" class="remove-category">×</button>
+                `;
+                
+                categoryItem.querySelector('.remove-category').addEventListener('click', () => {
+                    categoryItem.remove();
+                    updateTotalValue();
+                });
+
+                categoriesList.appendChild(categoryItem);
+                categoryValue.value = '';
+                categorySelect.value = '';
+                updateTotalValue();
+            }
+        });
+
+        function updateTotalValue() {
+            let total = 0;
+            const categoryItems = categoriesList.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                const valueText = item.textContent.split('R$ ')[1];
+                const value = parseFloat(valueText.replace(',', '.'));
+                if (!isNaN(value)) {
+                    total += value;
+                }
+            });
+            totalValue.value = total.toFixed(2).replace('.', ',');
+        }
+    }
+
+    // Adicionar o container de gastos por empresa ao formulário
+    const companyExpensesSection = document.createElement('div');
+    companyExpensesSection.className = 'form-group';
+    companyExpensesSection.innerHTML = `
+        <label for="company-expenses">Gastos por Empresa</label>
+        <div id="company-expenses-container"></div>
+        <button type="button" class="add-expense-btn" onclick="addCompanyExpenseField()">Adicionar Empresa</button>
+        <div class="help-text">
+            <p>Adicione os gastos por empresa para gerar o ranking de despesas.</p>
+            <p>Exemplo de formato: Nome da Empresa: R$ 150,00</p>
+        </div>
     `;
-    formGroup.appendChild(helpText);
+
+    // Remover a seção de gastos críticos se existir
+    const criticalExpensesGroup = document.querySelector('#criticalExpenses')?.closest('.form-group');
+    if (criticalExpensesGroup) {
+        criticalExpensesGroup.remove();
+    }
+
+    // Adicionar a nova seção de gastos por empresa
+    const formGroups = document.querySelectorAll('.form-group');
+    const lastFormGroup = formGroups[formGroups.length - 1];
+    lastFormGroup.parentNode.insertBefore(companyExpensesSection, lastFormGroup.nextSibling);
+
+    // Adicionar o primeiro campo de gasto por empresa
+    addCompanyExpenseField();
+
+    // Tornar a função addCompanyExpenseField global para que possa ser chamada pelo botão
+    window.addCompanyExpenseField = addCompanyExpenseField;
 
     function formatMonthYear(dateString) {
         if (!dateString) return '';

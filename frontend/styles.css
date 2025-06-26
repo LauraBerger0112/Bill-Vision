@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 :root {
-    --primary-color: #072c45;
-    --secondary-color: #16202e;
-    --accent-color: #041826;
+    --primary-color: #25323a;
+    --secondary-color: #20252c;
+    --accent-color: #202a31;
     --background-color: #ced5de;
     --text-color: #333333;
     --input-background: #ced5de;
-    --input-border: #16202e;
+    --input-border: #1c222b;
     --menu-hover: #020c12;
     --menu-text: #ffffff;
-    --button-bg: #16202e;
+    --button-bg: #1e252e;
     --button-text: #ffffff;
     --gradient-start: #ced5de;
     --gradient-end: #71757a;
@@ -23,9 +23,9 @@
     --secondary-color: #0c0c0d;
     --accent-color: #0c0c0d;
     --background-color: #37383b;
-    --text-color: #f5fafa;
+    --text-color: #000000;
     --input-background: #71757a;
-    --input-border: #0c0c0d;
+    --input-border: #050505;
     --menu-hover: #0c0c0d;
     --menu-text: #f5fafa;
     --button-bg: #0c0c0d;
@@ -473,7 +473,7 @@ button.generate-report {
 
 .reports-table .delete {
     padding: 0.5rem 1rem;
-    background-color: rgba(22, 32, 46, 0.9);
+    background-color: rgba(37, 42, 49, 0.9);
     color: white;
     border: none;
     border-radius: 4px;
@@ -602,7 +602,7 @@ button.generate-report {
 .auth-form button {
     width: 100%;
     margin-top: 1rem;
-    background-color: #16202e;
+    background-color: #1b2027;
     color: #ffffff;
     padding: 0.8rem;
     border: none;
@@ -631,4 +631,208 @@ button.generate-report {
          url('../fonts/LydianBT.woff') format('woff');
     font-weight: normal;
     font-style: normal;
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-table th,
+.ranking-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ranking-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+
+.ranking-table tr:hover {
+    background-color: var(--hover-color);
+}
+
+.ranking-table .decrease {
+    color: #4CAF50;
+}
+
+.ranking-table .increase {
+    color: #f44336;
+}
+
+#expenses-ranking {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#expenses-ranking h3 {
+    margin-bottom: 20px;
+    color: var(--text-color);
+    font-size: 1.2em;
+}
+
+.expense-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.company-name {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+}
+
+.expense-value {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+}
+
+.remove-expense {
+    padding: 8px 12px;
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.remove-expense:hover {
+    background-color: var(--button-hover);
+}
+
+/* Estilos específicos para o modo claro */
+body:not([data-theme="dark"]) .remove-expense {
+    background-color: rgba(13, 11, 17, 0.7);
+}
+
+body:not([data-theme="dark"]) .remove-expense:hover {
+    background-color: rgb(13, 11, 17);
+}
+
+.add-expense-btn {
+    padding: 8px 16px;
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+    transition: background-color 0.3s;
+}
+
+.add-expense-btn:hover {
+    background-color: var(--button-hover);
+}
+
+/* Estilos específicos para o modo claro */
+body:not([data-theme="dark"]) .add-expense-btn {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+body:not([data-theme="dark"]) .add-expense-btn:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+#company-expenses-container {
+    margin: 10px 0;
+}
+
+.company-input-group {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.expense-categories {
+    background-color: var(--background-color);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.category-inputs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.category-select {
+    flex: 2;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+}
+
+.category-value {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+}
+
+.add-category-btn {
+    padding: 8px 12px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add-category-btn:hover {
+    background-color: var(--primary-color-dark);
+}
+
+.categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--input-background);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.remove-category {
+    background: none;
+    border: none;
+    color: #1d1b1b;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.remove-category:hover {
+    color: #3b3434;
 } 
