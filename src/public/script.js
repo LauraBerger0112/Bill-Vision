@@ -39,12 +39,20 @@ const addBill = async (billData) => {
             },
             body: JSON.stringify(billData)
         });
+        if (response.status === 409) {
+            // Assinatura repetida
+            const errorData = await response.json();
+            showBillError(errorData.message || 'Assinatura repetida.');
+            return;
+        }
         const newBill = await response.json();
         bills.push(newBill);
         updateBillsTable();
         updateDashboard();
+        hideBillError();
     } catch (error) {
         console.error('Erro ao adicionar conta:', error);
+        showBillError('Erro ao adicionar conta.');
     }
 };
 
@@ -93,9 +101,22 @@ const updateDashboard = () => {
     document.getElementById('total-paid').textContent = formatCurrency(totalPaid);
 };
 
+// Funções para exibir/ocultar mensagem de erro
+function showBillError(message) {
+    const errorDiv = document.getElementById('bill-error-message');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+function hideBillError() {
+    const errorDiv = document.getElementById('bill-error-message');
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
+}
+
 // Event Listeners
 document.getElementById('bill-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    hideBillError();
     const billData = {
         name: document.getElementById('bill-name').value,
         value: parseFloat(document.getElementById('bill-value').value),

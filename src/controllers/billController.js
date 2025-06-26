@@ -25,6 +25,17 @@ exports.getBill = async (req, res) => {
 
 // Criar uma nova conta
 exports.createBill = async (req, res) => {
+    // Verificar se já existe uma Bill com os mesmos dados (assinatura repetida)
+    const existingBill = await Bill.findOne({
+        name: req.body.name,
+        value: req.body.value,
+        date: req.body.date,
+        category: req.body.category
+    });
+    if (existingBill) {
+        return res.status(409).json({ message: 'Assinatura repetida: já existe uma conta com esses dados.' });
+    }
+
     const bill = new Bill({
         name: req.body.name,
         value: req.body.value,
