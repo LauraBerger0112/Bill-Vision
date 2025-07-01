@@ -27,10 +27,10 @@ connectDB();
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
-});
+  });  
 
 // Rotas de autenticação
 app.post('/api/auth/register', async (req, res) => {

@@ -467,6 +467,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Função para formatar valores conforme a moeda escolhida
+    function formatCurrency(value, currency) {
+        let locales = {
+            BRL: 'pt-BR',
+            USD: 'en-US',
+            EUR: 'de-DE',
+            GBP: 'en-GB',
+            ARS: 'es-AR',
+            BTC: 'en-US',
+        };
+        let symbols = {
+            BRL: 'BRL',
+            USD: 'USD',
+            EUR: 'EUR',
+            GBP: 'GBP',
+            ARS: 'ARS',
+            BTC: 'BTC',
+        };
+        let locale = locales[currency] || 'en-US';
+        let symbol = symbols[currency] || currency;
+        if (currency === 'BTC') {
+            return `${parseFloat(value).toFixed(8)} BTC`;
+        }
+        return Number(value).toLocaleString(locale, { style: 'currency', currency: symbol });
+    }
+
     function displayReports(reports) {
         const container = document.getElementById('reports-container');
         container.innerHTML = '';
@@ -482,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <th>Responsável</th>
                 <th>Resumo</th>
                 <th>Gastos Críticos</th>
+                <th>Gastos por Empresa</th>
                 <th>Ações</th>
             </tr>
         `;
@@ -489,17 +516,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tbody = document.createElement('tbody');
         reports.forEach(report => {
+            const moeda = report.currency || 'BRL';
+            // Formatar gastos críticos
+            const criticalExpensesHTML = report.criticalExpenses && report.criticalExpenses.length > 0
+                ? report.criticalExpenses.map(expense => `<li>${expense.replace(/([\d.,]+)\s*([A-Z]{3}|R\$|\$|€|£)?/, (match, val, sym) => formatCurrency(val.replace(',', '.'), moeda))}</li>`).join('')
+                : '<li>-</li>';
+            // Formatar gastos por empresa (se existirem)
+            let companyExpensesHTML = '-';
+            if (report.companyExpenses && report.companyExpenses.length > 0) {
+                companyExpensesHTML = report.companyExpenses.map(expense => {
+                    return `<li>${expense.replace(/([\d.,]+)\s*([A-Z]{3}|R\$|\$|€|£)?/, (match, val, sym) => formatCurrency(val.replace(',', '.'), moeda))}</li>`;
+                }).join('');
+            }
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${report.projectName}</td>
                 <td>${formatMonthYear(report.referenceMonth)}</td>
                 <td>${report.responsiblePerson}</td>
                 <td>${report.summary}</td>
-                <td>
-                    <ul>
-                        ${report.criticalExpenses.map(expense => `<li>${expense}</li>`).join('')}
-                    </ul>
-                </td>
+                <td><ul>${criticalExpensesHTML}</ul></td>
+                <td><ul>${companyExpensesHTML}</ul></td>
                 <td>
                     <button class="delete" data-id="${report.id || report._id}">Excluir</button>
                 </td>
@@ -539,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportForm = document.getElementById('report-form');
     reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         // Obter moeda escolhida
         const currencySelect = document.getElementById('currency');
         const selectedCurrency = currencySelect.value;
@@ -559,12 +594,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             currencySymbol = 'R$';
         }
-        
+        // Processar gastos críticos digitados manualmente
+        const criticalExpensesInput = document.getElementById('criticalExpenses').value;
+        const criticalExpenses = criticalExpensesInput.split('\n').map(item => item.trim()).filter(Boolean);
         // Processar gastos por empresa
         const companyExpenses = [];
         const companyExpensesContainer = document.getElementById('company-expenses-container');
         const expenseRows = companyExpensesContainer.querySelectorAll('.expense-row');
-        
         expenseRows.forEach(row => {
             const company = row.querySelector('.company-name').value.trim();
             const value = row.querySelector('.expense-value').value.trim().replace('.', '').replace(',', '.');
@@ -589,11 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-        
-        // Processar gastos críticos digitados manualmente
-        const criticalExpensesInput = document.getElementById('criticalExpenses').value;
-        const criticalExpenses = criticalExpensesInput.split('\n').map(item => item.trim()).filter(Boolean);
-        
         const formData = {
             projectName: document.getElementById('projectName').value,
             referenceMonth: document.getElementById('referenceMonth').value,
@@ -601,6 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
             summary: document.getElementById('summary').value,
             completedActivities: document.getElementById('completedActivities').value.split('\n'),
             criticalExpenses: criticalExpenses,
+            companyExpenses: companyExpenses,
             plannedVsAchieved: document.getElementById('plannedVsAchieved').value,
             problems: document.getElementById('problems').value.split('\n'),
             attachments: Array.from(document.getElementById('attachments').files).map(file => file.name),
@@ -861,32 +893,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Preencher select de moedas com dados da API AwesomeAPI
+    // Pesquisa dinâmica de moedas
+    const currencySearchInput = document.getElementById('currency-search');
+    const currencySelect = document.getElementById('currency');
+    let allCurrencyOptions = [];
+
     async function popularMoedas() {
-        const select = document.getElementById('currency');
         try {
             const response = await fetch('https://economia.awesomeapi.com.br/json/available/uniq');
             const moedas = await response.json();
             // Limpa opções extras
-            select.innerHTML = '';
-            // Adiciona opções
-            Object.entries(moedas).forEach(([codigo, nome]) => {
-                const option = document.createElement('option');
-                option.value = codigo;
-                option.textContent = `${nome} (${codigo})`;
-                select.appendChild(option);
+            currencySelect.innerHTML = '';
+            allCurrencyOptions = Object.entries(moedas).map(([codigo, nome]) => {
+                return { value: codigo, label: `${nome} (${codigo})` };
             });
+            renderCurrencyOptions(allCurrencyOptions);
         } catch (error) {
             // fallback para opções padrão
-            select.innerHTML = `
-                <option value="BRL">Real (BRL)</option>
-                <option value="USD">Dólar (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-                <option value="GBP">Libra (GBP)</option>
-                <option value="ARS">Peso Argentino (ARS)</option>
-                <option value="BTC">Bitcoin (BTC)</option>
-            `;
+            allCurrencyOptions = [
+                { value: 'BRL', label: 'Real (BRL)' },
+                { value: 'USD', label: 'Dólar (USD)' },
+                { value: 'EUR', label: 'Euro (EUR)' },
+                { value: 'GBP', label: 'Libra (GBP)' },
+                { value: 'ARS', label: 'Peso Argentino (ARS)' },
+                { value: 'BTC', label: 'Bitcoin (BTC)' }
+            ];
+            renderCurrencyOptions(allCurrencyOptions);
         }
     }
+
+    function renderCurrencyOptions(options) {
+        currencySelect.innerHTML = '';
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            currencySelect.appendChild(option);
+        });
+    }
+
+    currencySearchInput.addEventListener('input', function() {
+        const search = this.value.trim().toLowerCase();
+        if (!search) {
+            renderCurrencyOptions(allCurrencyOptions);
+            return;
+        }
+        const filtered = allCurrencyOptions.filter(opt =>
+            opt.label.toLowerCase().includes(search) ||
+            opt.value.toLowerCase().includes(search)
+        );
+        renderCurrencyOptions(filtered);
+    });
+
     popularMoedas();
 }); 

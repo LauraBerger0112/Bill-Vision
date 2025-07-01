@@ -87,6 +87,19 @@
                     <h1>Análise de Faturas</h1>
                     <form id="report-form">
                         <div class="form-group">
+                            <label for="currency">Moeda:</label>
+                            <input type="text" id="currency-search" placeholder="Pesquisar moeda..." style="margin-bottom: 8px; width: 100%;" autocomplete="off">
+                            <select id="currency" required>
+                                <option value="BRL">Real (BRL)</option>
+                                <option value="USD">Dólar (USD)</option>
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="GBP">Libra (GBP)</option>
+                                <option value="ARS">Peso Argentino (ARS)</option>
+                                <option value="BTC">Bitcoin (BTC)</option>
+                                <!-- Outras moedas podem ser adicionadas dinamicamente pelo JS -->
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="projectName">Nome do Projeto/Equipe/Setor:</label>
                             <input type="text" id="projectName" required>
                         </div>
@@ -112,36 +125,30 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="criticalExpenses">Gastos Críticos (um por linha):</label>
-                            <textarea id="criticalExpenses" rows="4" placeholder="Ex: Energia: 500\nÁgua: 200\nInternet: 100" required></textarea>
-                        </div>
-
-                        <div class="form-group">
                             <label for="plannedVsAchieved">Planejado vs Atingido:</label>
                             <textarea id="plannedVsAchieved" rows="4" required></textarea>
                         </div>
-
+                        <div class="form-group">
+                            <label for="criticalExpenses">Gastos Críticos (um por linha):</label>
+                            <textarea id="criticalExpenses" rows="4" placeholder="Ex: Energia: 500\nÁgua: 200\nInternet: 100" required></textarea>
+                        </div>
                         <div class="form-group">
                             <label for="problems">Obstáculos:</label>
                             <textarea id="problems" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group" id="company-expenses-form-group">
+                            <label for="company-expenses">Gastos por Empresa</label>
+                            <div id="company-expenses-container"></div>
+                            <button type="button" class="add-expense-btn" onclick="addCompanyExpenseField()">Adicionar Empresa</button>
+                            <div class="help-text">
+                                <p>Adicione os gastos por empresa para gerar o ranking de despesas.</p>
+                                <p>Exemplo de formato: Nome da Empresa: R$ 150,00</p>
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label for="attachments">Anexos:</label>
                             <input type="file" id="attachments" multiple>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="currency">Moeda:</label>
-                            <select id="currency" required>
-                                <option value="BRL">Real (BRL)</option>
-                                <option value="USD">Dólar (USD)</option>
-                                <option value="EUR">Euro (EUR)</option>
-                                <option value="GBP">Libra (GBP)</option>
-                                <option value="ARS">Peso Argentino (ARS)</option>
-                                <option value="BTC">Bitcoin (BTC)</option>
-                                <!-- Outras moedas podem ser adicionadas dinamicamente pelo JS -->
-                            </select>
                         </div>
 
                         <button type="submit">Gerar Relatório</button>
