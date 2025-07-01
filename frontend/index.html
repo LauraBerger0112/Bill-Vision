@@ -27,6 +27,21 @@
                     <input type="password" id="login-password" required>
                 </div>
                 <button type="submit">Entrar</button>
+                <div class="form-group">
+                    <a href="#" id="forgot-password-link">Esqueci minha senha</a>
+                </div>
+            </form>
+
+            <form id="forgot-password-form" class="auth-form" style="display:none;">
+                <h2>Recuperar Senha</h2>
+                <div class="form-group">
+                    <label for="forgot-email">Email cadastrado:</label>
+                    <input type="email" id="forgot-email" required>
+                </div>
+                <button type="submit">Enviar link de recuperação</button>
+                <div class="form-group">
+                    <a href="#" id="back-to-login">Voltar ao login</a>
+                </div>
             </form>
 
             <form id="register-form" class="auth-form">
@@ -97,8 +112,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="criticalExpenses">Gastos Críticos:</label>
-                            <textarea id="criticalExpenses" rows="4" required></textarea>
+                            <label for="criticalExpenses">Gastos Críticos (um por linha):</label>
+                            <textarea id="criticalExpenses" rows="4" placeholder="Ex: Energia: 500\nÁgua: 200\nInternet: 100" required></textarea>
                         </div>
 
                         <div class="form-group">
@@ -114,6 +129,19 @@
                         <div class="form-group">
                             <label for="attachments">Anexos:</label>
                             <input type="file" id="attachments" multiple>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="currency">Moeda:</label>
+                            <select id="currency" required>
+                                <option value="BRL">Real (BRL)</option>
+                                <option value="USD">Dólar (USD)</option>
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="GBP">Libra (GBP)</option>
+                                <option value="ARS">Peso Argentino (ARS)</option>
+                                <option value="BTC">Bitcoin (BTC)</option>
+                                <!-- Outras moedas podem ser adicionadas dinamicamente pelo JS -->
+                            </select>
                         </div>
 
                         <button type="submit">Gerar Relatório</button>
@@ -136,6 +164,19 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <div id="reset-password-screen" class="hidden">
+        <div class="auth-container">
+            <form id="reset-password-form" class="auth-form">
+                <h2>Redefinir Senha</h2>
+                <div class="form-group">
+                    <label for="reset-password">Nova senha:</label>
+                    <input type="password" id="reset-password" required>
+                </div>
+                <button type="submit">Redefinir Senha</button>
+            </form>
+        </div>
     </div>
 
     <script src="script.js"></script>

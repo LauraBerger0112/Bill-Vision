@@ -6,6 +6,7 @@ require('dotenv').config();
 const connectDB = require('./config/database');
 const User = require('./models/User');
 const Report = require('./models/Report');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -21,6 +22,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_muito_segura';
 
 // Conectar ao MongoDB
 connectDB();
+
+// Configuração do Nodemailer para Outlook/Hotmail
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // Rotas de autenticação
 app.post('/api/auth/register', async (req, res) => {
@@ -81,7 +91,7 @@ function authenticateToken(req, res, next) {
 // Rotas de relatórios
 app.get('/api/reports', authenticateToken, async (req, res) => {
     try {
-        const reports = await Report.find({ createdBy: req.user.userId });
+        const reports = await Report.find({ user: req.user.userId });
         res.json(reports);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -92,7 +102,7 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
     try {
         const report = new Report({
             ...req.body,
-            createdBy: req.user.userId
+            user: req.user.userId
         });
         await report.save();
         res.status(201).json(report);
@@ -111,6 +121,44 @@ app.delete('/api/reports/:id', authenticateToken, async (req, res) => {
         res.status(200).json({ message: 'Relatório deletado com sucesso' });
     } catch (error) {
         res.status(400).json({ message: error.message });
+    }
+});
+
+// Recuperação de senha
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+        return res.status(200).json({ message: 'Se o email estiver cadastrado, você receberá um link para redefinir sua senha.' });
+    }
+    try {
+        const resetToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        const resetUrl = `http://localhost:5000/reset-password?token=${resetToken}`;
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'Recuperação de senha - Bill Vision',
+            html: `<p>Você solicitou a redefinição de senha. Clique no link abaixo para redefinir:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Se não foi você, ignore este email.</p>`
+        });
+        return res.status(200).json({ message: 'Se o email estiver cadastrado, você receberá um link para redefinir sua senha.' });
+    } catch (error) {
+        console.error('Erro ao enviar email de recuperação:', error);
+        return res.status(500).json({ message: 'Erro ao enviar email de recuperação.' });
+    }
+});
+
+// Endpoint para redefinir senha
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findById(decoded.userId);
+        if (!user) return res.status(400).json({ message: 'Usuário não encontrado.' });
+        user.password = password;
+        await user.save();
+        return res.status(200).json({ message: 'Senha redefinida com sucesso.' });
+    } catch (error) {
+        return res.status(400).json({ message: 'Token inválido ou expirado.' });
     }
 });
 

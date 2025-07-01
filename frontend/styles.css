@@ -835,4 +835,13 @@ body:not([data-theme="dark"]) .add-expense-btn:hover {
 
 .remove-category:hover {
     color: #3b3434;
+}
+
+input.valid-email {
+    border: 2px solid #28a745 !important;
+    background-color: #eaffea;
+}
+input.invalid-email {
+    border: 2px solid #dc3545 !important;
+    background-color: #ffeaea;
 } 

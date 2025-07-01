@@ -5,18 +5,6 @@ let reports = [];
 let reportsChart = null;
 const reportForm = document.getElementById('report-form');
 
-reports.push({
-    projectName: 'Projeto Teste',
-    referenceMonth: '2024-06',
-    responsiblePerson: 'Fulano',
-    summary: 'Resumo teste',
-    completedActivities: ['Atividade 1'],
-    criticalExpenses: ['Material: R$ 100,00'],
-    plannedVsAchieved: 'Planejado',
-    problems: ['Nenhum'],
-    attachments: []
-});
-
 document.addEventListener('DOMContentLoaded', () => {
     const authScreen = document.getElementById('auth-screen');
     const mainContent = document.getElementById('main-content');
@@ -137,6 +125,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const registerForm = document.getElementById('register-form');
+    const registerEmailInput = document.getElementById('register-email');
+    let isEmailValid = false;
+    let lastCheckedEmail = '';
+    let emailValidationTimeout;
+    const mailboxLayerApiKey = '7925e95fdf1758595b6fe12e29779423'; // Substitua pela sua chave da MailboxLayer
+
+    registerEmailInput.addEventListener('input', () => {
+        clearTimeout(emailValidationTimeout);
+        const email = registerEmailInput.value;
+        isEmailValid = false;
+        registerEmailInput.classList.remove('valid-email', 'invalid-email');
+        if (!email) return;
+        emailValidationTimeout = setTimeout(async () => {
+            if (email === lastCheckedEmail) return;
+            lastCheckedEmail = email;
+            try {
+                const emailValidationUrl = `https://apilayer.net/api/check?access_key=${mailboxLayerApiKey}&email=${encodeURIComponent(email)}`;
+                const emailValidationResponse = await fetch(emailValidationUrl);
+                const emailValidationData = await emailValidationResponse.json();
+                if (emailValidationData.format_valid && emailValidationData.mx_found && emailValidationData.smtp_check) {
+                    isEmailValid = true;
+                    registerEmailInput.classList.add('valid-email');
+                    registerEmailInput.classList.remove('invalid-email');
+                } else {
+                    isEmailValid = false;
+                    registerEmailInput.classList.add('invalid-email');
+                    registerEmailInput.classList.remove('valid-email');
+                }
+            } catch (error) {
+                isEmailValid = false;
+                registerEmailInput.classList.add('invalid-email');
+                registerEmailInput.classList.remove('valid-email');
+            }
+        }, 600); // debounce
+    });
+
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('register-name').value;
@@ -146,6 +170,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (password !== confirmPassword) {
             alert('As senhas não coincidem');
+            return;
+        }
+
+        // Verificação de email usando MailboxLayer
+        try {
+            const emailValidationUrl = `https://apilayer.net/api/check?access_key=${mailboxLayerApiKey}&email=${encodeURIComponent(email)}`;
+            const emailValidationResponse = await fetch(emailValidationUrl);
+            const emailValidationData = await emailValidationResponse.json();
+            if (!(emailValidationData.format_valid && emailValidationData.mx_found && emailValidationData.smtp_check)) {
+                alert('Por favor, insira um email válido e existente.');
+                return;
+            }
+        } catch (error) {
+            alert('Erro ao validar o email. Tente novamente.');
             return;
         }
 
@@ -174,6 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButton = document.getElementById('logout');
     logoutButton.addEventListener('click', () => {
         localStorage.removeItem('token');
+        reports = [];
+        displayReports(reports);
         checkAuth();
     });
 
@@ -500,6 +540,26 @@ document.addEventListener('DOMContentLoaded', () => {
     reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Obter moeda escolhida
+        const currencySelect = document.getElementById('currency');
+        const selectedCurrency = currencySelect.value;
+        let conversionRate = 1;
+        let currencySymbol = selectedCurrency;
+        if (selectedCurrency !== 'BRL') {
+            try {
+                const response = await fetch(`https://economia.awesomeapi.com.br/json/last/BRL-${selectedCurrency}`);
+                const data = await response.json();
+                const key = `BRL${selectedCurrency}`;
+                if (data[key] && data[key].bid) {
+                    conversionRate = parseFloat(data[key].bid);
+                }
+            } catch (error) {
+                alert('Erro ao buscar cotação da moeda. Os valores serão mantidos em BRL.');
+            }
+        } else {
+            currencySymbol = 'R$';
+        }
+        
         // Processar gastos por empresa
         const companyExpenses = [];
         const companyExpensesContainer = document.getElementById('company-expenses-container');
@@ -507,17 +567,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         expenseRows.forEach(row => {
             const company = row.querySelector('.company-name').value.trim();
-            const value = row.querySelector('.expense-value').value.trim();
+            const value = row.querySelector('.expense-value').value.trim().replace('.', '').replace(',', '.');
             const categories = [];
-            
             // Coletar categorias
             const categoryItems = row.querySelectorAll('.category-item');
             categoryItems.forEach(item => {
-                categories.push(item.textContent.trim());
+                // Extrair valor da categoria e converter
+                let text = item.textContent;
+                let match = text.match(/: R\$ ([\d,.]+)/);
+                let catValue = match ? parseFloat(match[1].replace('.', '').replace(',', '.')) : 0;
+                let convertedCatValue = (catValue / conversionRate).toFixed(2);
+                let catName = text.split(':')[0];
+                categories.push(`${catName}: ${currencySymbol} ${convertedCatValue}`);
             });
-
             if (company && value) {
-                companyExpenses.push(`${company}: R$ ${value}`);
+                let convertedValue = (parseFloat(value) / conversionRate).toFixed(2);
+                companyExpenses.push(`${company}: ${currencySymbol} ${convertedValue}`);
                 // Adicionar detalhes das categorias
                 if (categories.length > 0) {
                     companyExpenses.push(`Categorias: ${categories.join(' | ')}`);
@@ -525,16 +590,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // Processar gastos críticos digitados manualmente
+        const criticalExpensesInput = document.getElementById('criticalExpenses').value;
+        const criticalExpenses = criticalExpensesInput.split('\n').map(item => item.trim()).filter(Boolean);
+        
         const formData = {
             projectName: document.getElementById('projectName').value,
             referenceMonth: document.getElementById('referenceMonth').value,
             responsiblePerson: document.getElementById('responsiblePerson').value,
             summary: document.getElementById('summary').value,
             completedActivities: document.getElementById('completedActivities').value.split('\n'),
-            criticalExpenses: companyExpenses,
+            criticalExpenses: criticalExpenses,
             plannedVsAchieved: document.getElementById('plannedVsAchieved').value,
             problems: document.getElementById('problems').value.split('\n'),
-            attachments: Array.from(document.getElementById('attachments').files).map(file => file.name)
+            attachments: Array.from(document.getElementById('attachments').files).map(file => file.name),
+            currency: selectedCurrency
         };
 
         try {
@@ -710,4 +780,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
     displayReports(reports);
     updateChart();
+
+    // Recuperação de senha
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    const backToLogin = document.getElementById('back-to-login');
+
+    forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginForm.style.display = 'none';
+        forgotPasswordForm.style.display = 'block';
+    });
+
+    backToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        forgotPasswordForm.style.display = 'none';
+        loginForm.style.display = 'block';
+    });
+
+    forgotPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgot-email').value;
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            if (response.ok) {
+                alert('Se o email estiver cadastrado, você receberá um link para redefinir sua senha.');
+                forgotPasswordForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            } else {
+                alert('Erro ao solicitar recuperação de senha.');
+            }
+        } catch (error) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
+
+    // Redefinição de senha via link
+    const resetPasswordScreen = document.getElementById('reset-password-screen');
+    const resetPasswordForm = document.getElementById('reset-password-form');
+    const resetPasswordInput = document.getElementById('reset-password');
+
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    if (window.location.pathname === '/reset-password') {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-content').classList.add('hidden');
+        resetPasswordScreen.classList.remove('hidden');
+    }
+
+    resetPasswordForm && resetPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = resetPasswordInput.value;
+        const token = getQueryParam('token');
+        if (!token) {
+            alert('Token de redefinição inválido.');
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert('Senha redefinida com sucesso! Faça login com sua nova senha.');
+                window.location.href = '/';
+            } else {
+                alert(data.message || 'Erro ao redefinir senha.');
+            }
+        } catch (error) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
+
+    // Preencher select de moedas com dados da API AwesomeAPI
+    async function popularMoedas() {
+        const select = document.getElementById('currency');
+        try {
+            const response = await fetch('https://economia.awesomeapi.com.br/json/available/uniq');
+            const moedas = await response.json();
+            // Limpa opções extras
+            select.innerHTML = '';
+            // Adiciona opções
+            Object.entries(moedas).forEach(([codigo, nome]) => {
+                const option = document.createElement('option');
+                option.value = codigo;
+                option.textContent = `${nome} (${codigo})`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            // fallback para opções padrão
+            select.innerHTML = `
+                <option value="BRL">Real (BRL)</option>
+                <option value="USD">Dólar (USD)</option>
+                <option value="EUR">Euro (EUR)</option>
+                <option value="GBP">Libra (GBP)</option>
+                <option value="ARS">Peso Argentino (ARS)</option>
+                <option value="BTC">Bitcoin (BTC)</option>
+            `;
+        }
+    }
+    popularMoedas();
 }); 
