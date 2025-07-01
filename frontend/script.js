@@ -851,48 +851,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Redefinição de senha via link
-    const resetPasswordScreen = document.getElementById('reset-password-screen');
-    const resetPasswordForm = document.getElementById('reset-password-form');
-    const resetPasswordInput = document.getElementById('reset-password');
-
-    function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-    }
-
-    if (window.location.pathname === '/reset-password') {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-content').classList.add('hidden');
-        resetPasswordScreen.classList.remove('hidden');
-    }
-
-    resetPasswordForm && resetPasswordForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const password = resetPasswordInput.value;
-        const token = getQueryParam('token');
-        if (!token) {
-            alert('Token de redefinição inválido.');
-            return;
-        }
-        try {
-            const response = await fetch('http://localhost:5000/api/auth/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, password })
-            });
-            const data = await response.json();
-            if (response.ok) {
-                alert('Senha redefinida com sucesso! Faça login com sua nova senha.');
-                window.location.href = '/';
-            } else {
-                alert(data.message || 'Erro ao redefinir senha.');
-            }
-        } catch (error) {
-            alert('Erro ao conectar ao servidor.');
-        }
-    });
-
     // Pesquisa dinâmica de moedas
     const currencySearchInput = document.getElementById('currency-search');
     const currencySelect = document.getElementById('currency');

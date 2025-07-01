@@ -133,7 +133,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
     try {
         const resetToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        const resetUrl = `http://localhost:5000/reset-password?token=${resetToken}`;
+        const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+        const resetUrl = `${FRONTEND_URL}/reset-password.html?token=${resetToken}`;
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: user.email,
