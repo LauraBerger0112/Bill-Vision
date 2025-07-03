@@ -1,0 +1,22 @@
+[
+  { "descricao": "iFood", "categoria": "Delivery", "valor": 120 },
+  { "descricao": "Uber Eats", "categoria": "Delivery", "valor": 80 },
+  { "descricao": "Netflix", "categoria": "Streaming", "valor": 55 },
+  { "descricao": "Spotify", "categoria": "Streaming", "valor": 35 },
+  { "descricao": "Uber", "categoria": "Transporte", "valor": 90 },
+  { "descricao": "Amazon", "categoria": "Compras online", "valor": 200 },
+  { "descricao": "Farmácia São João", "categoria": "Farmácia", "valor": 60 },
+  { "descricao": "Smart Fit", "categoria": "Academia", "valor": 99 },
+  { "descricao": "Restaurante Japonês", "categoria": "Restaurante", "valor": 150 },
+  { "descricao": "Cinema", "categoria": "Lazer", "valor": 50 },
+  { "descricao": "Curso Udemy", "categoria": "Cursos Online", "valor": 80 },
+  { "descricao": "Supermercado Pão de Açúcar", "categoria": "Supermercado", "valor": 400 },
+  { "descricao": "Pet Shop", "categoria": "Pets", "valor": 120 },
+  { "descricao": "Viagem de Fim de Semana", "categoria": "Viagem", "valor": 600 },
+  { "descricao": "Apple Music", "categoria": "Streaming", "valor": 17 },
+  { "descricao": "Mercado Livre", "categoria": "Compras online", "valor": 150 },
+  { "descricao": "99 Táxi", "categoria": "Transporte", "valor": 60 },
+  { "descricao": "Uber", "categoria": "Transporte", "valor": 45 },
+  { "descricao": "Rappi", "categoria": "Delivery", "valor": 70 },
+  { "descricao": "HBO Max", "categoria": "Streaming", "valor": 34 }
+] 

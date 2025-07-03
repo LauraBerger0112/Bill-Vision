@@ -8,9 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div id="login-theme-btn-wrapper" style="position: fixed; top: 15px; right: 15px; z-index: 2000;">
+        <button id="login-theme-toggle" class="theme-toggle-btn" title="Alternar tema">
+            <img src="sol3.png" alt="Sol" class="theme-icon sun-icon" id="login-sun-icon" style="display: block;" />
+            <span class="theme-icon moon-icon" id="login-moon-icon" style="display: none;">☾</span>
+        </button>
+    </div>
     <!-- Tela de Login/Cadastro (inicialmente visível) -->
     <div id="auth-screen">
         <div class="auth-container">
+            
             <div class="auth-tabs">
                 <button class="auth-tab active" data-tab="login">Login</button>
                 <button class="auth-tab" data-tab="register">Cadastro</button>
@@ -71,12 +78,18 @@
     <div id="main-content" class="hidden">
         <header>
             <nav>
-                <div class="logo">BILL VISION</div>
+                <div class="logo">
+                    <img src="logo_branca.png" alt="Bill Vision" class="logo-img" id="logo-img" />
+                </div>
                 <ul class="nav-links">
                     <li><a href="#" class="nav-item" id="reports-tab">Relatórios</a></li>
                     <li><a href="#" class="nav-item" id="graph-tab">Gráfico Mensal</a></li>
-                    <li><a href="#" class="nav-item" id="theme-toggle">Tema Escuro</a></li>
+                    <li><a href="#" class="nav-item" id="simulator-tab">Simulador Econômico</a></li>
                     <li><a href="#" class="nav-item" id="logout">Sair</a></li>
+                    <li><button id="auth-theme-toggle" class="theme-toggle-btn" title="Alternar tema">
+                        <img src="sol3.png" alt="Sol" class="theme-icon sun-icon" id="sun-icon" style="display: block;" />
+                        <span class="theme-icon moon-icon" id="moon-icon" style="display: none;">☾</span>
+                    </button></li>
                 </ul>
             </nav>
         </header>
@@ -130,7 +143,7 @@
                         </div>
                         <div class="form-group">
                             <label for="criticalExpenses">Gastos Críticos (um por linha):</label>
-                            <textarea id="criticalExpenses" rows="4" placeholder="Ex: Energia: 500\nÁgua: 200\nInternet: 100" required></textarea>
+                            <textarea id="criticalExpenses" rows="4" placeholder="Ex: Energia: 500 | Água: 200 | Internet: 100" required></textarea>
                         </div>
                         <div class="form-group">
                             <label for="problems">Obstáculos:</label>
@@ -155,6 +168,11 @@
                     </form>
                 </div>
 
+                <section id="pdf-compare-section" style="margin: 32px 0; display: none;">
+                    <h2>Comparação dos Dados da Fatura (PDF Enviado)</h2>
+                    <canvas id="pdfCompareChart"></canvas>
+                </section>
+
                 <section class="reports-list">
                     <h2>Relatórios Gerados</h2>
                     <div id="reports-container">
@@ -167,6 +185,23 @@
                     <h1>Gráfico Mensal de Relatórios</h1>
                     <div class="chart-wrapper">
                         <canvas id="reportsChart"></canvas>
+                        <h1 style="margin-top: 32px;">Proporção de Valores Extraídos vs Duplicados</h1>
+                    </div>
+                    <section id="duplicates-info-section" class="duplicates-info-section" style="margin-top: 32px; display: none;">
+                        <div class="alert-duplicate">
+                            <strong>Atenção:</strong> Foram encontrados dados duplicados em faturas. Entre em contato com o banco emissor da fatura para esclarecimentos.
+                        </div>
+                        <h2>Detalhes dos Dados Duplicados</h2>
+                        <div id="duplicates-info-container"></div>
+                    </section>
+                </div>
+            </section>
+
+            <section id="simulator-section" class="hidden-section">
+                <div class="simulator-container">
+                    <h1>Simulador Econômico</h1>
+                    <div id="simulator-content">
+                        <p>Carregando sugestões e simulações...</p>
                     </div>
                 </div>
             </section>

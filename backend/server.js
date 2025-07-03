@@ -7,6 +7,12 @@ const connectDB = require('./config/database');
 const User = require('./models/User');
 const Report = require('./models/Report');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const Tesseract = require('tesseract.js');
+const fs = require('fs');
+const tipsRouter = require('./tips');
+// const { OpenAI } = require('openai'); // Desabilitado IA
 
 const app = express();
 
@@ -31,6 +37,11 @@ const transporter = nodemailer.createTransport({
       pass: process.env.EMAIL_PASS
     }
   });  
+
+// Configuração do multer para upload de arquivos
+const upload = multer({ dest: 'uploads/' });
+
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); // Desabilitado IA
 
 // Rotas de autenticação
 app.post('/api/auth/register', async (req, res) => {
@@ -100,10 +111,17 @@ app.get('/api/reports', authenticateToken, async (req, res) => {
 
 app.post('/api/reports', authenticateToken, async (req, res) => {
     try {
-        const report = new Report({
-            ...req.body,
-            user: req.user.userId
-        });
+        let reportData = { ...req.body, user: req.user.userId };
+        // Converter referenceMonth para Date se vier como string
+        if (typeof reportData.referenceMonth === 'string') {
+            // Se vier no formato YYYY-MM, adicionar dia 01
+            if (/^\d{4}-\d{2}$/.test(reportData.referenceMonth)) {
+                reportData.referenceMonth = new Date(reportData.referenceMonth + '-01');
+            } else {
+                reportData.referenceMonth = new Date(reportData.referenceMonth);
+            }
+        }
+        const report = new Report(reportData);
         await report.save();
         res.status(201).json(report);
     } catch (error) {
@@ -163,6 +181,130 @@ app.post('/api/auth/reset-password', async (req, res) => {
     }
 });
 
+// Função para extrair valores monetários duplicados
+function findDuplicateValues(text) {
+    // Regex para valores monetários (R$ 1.234,56, R$100,00, 1234.56, 100,00, etc)
+    const regex = /(?:R\$\s?|R\$|\b)(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g;
+    const matches = text.match(regex) || [];
+    const count = {};
+    matches.forEach(val => {
+        // Normalizar valor (remover espaços, garantir separador decimal)
+        let norm = val.replace(/\s/g, '').replace(/\.(?=\d{3,3},)/g, '').replace(',', '.');
+        count[norm] = (count[norm] || 0) + 1;
+    });
+    // Filtra apenas os valores que aparecem mais de uma vez
+    const duplicates = Object.entries(count).filter(([_, c]) => c > 1).map(([val, c]) => {
+        // Procurar todas as linhas do texto que contenham esse valor
+        const lines = text.split(/\r?\n/);
+        const occurrences = lines.filter(line => line.includes(val)).map(line => {
+            // Extrair nome do estabelecimento (antes do valor)
+            let description = line;
+            let valueIndex = line.indexOf(val);
+            if (valueIndex > 0) {
+                description = line.substring(0, valueIndex).trim();
+            } else {
+                description = line.trim();
+            }
+            // Extrair data (dd/mm/aaaa ou dd/mm/aa)
+            const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{2,4})/);
+            const date = dateMatch ? dateMatch[1] : '';
+            return { description, date };
+        });
+        return { value: val, count: c, occurrences };
+    });
+    return duplicates;
+}
+
+// Função para extrair todos os valores monetários do texto
+function extractAllValues(text) {
+    // Extrai todos os valores monetários, um para cada linha/ocorrência
+    const lines = text.split(/\r?\n/);
+    const values = [];
+    const regex = /(?:R\$\s?|R\$|\b)(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g;
+    lines.forEach(line => {
+        let match;
+        while ((match = regex.exec(line)) !== null) {
+            values.push(match[0]);
+        }
+    });
+    return values;
+}
+
+// Rota de upload de fatura
+app.post('/api/upload-invoice', upload.single('invoice'), async (req, res) => {
+    try {
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({ error: 'Arquivo não enviado.' });
+        }
+        const ext = path.extname(file.originalname).toLowerCase();
+        let text = '';
+        if (ext === '.pdf') {
+            try {
+                const dataBuffer = fs.readFileSync(file.path);
+                const data = await pdfParse(dataBuffer);
+                text = data.text;
+                console.log('[PDF TEXT EXTRAÍDO]\n', text); // Log do texto extraído
+            } catch (pdfErr) {
+                console.error('[PDF PARSE ERROR]', pdfErr);
+                fs.unlinkSync(file.path);
+                return res.status(400).json({ error: 'Erro ao ler o PDF. Verifique se o arquivo está íntegro e no formato correto.' });
+            }
+        } else if (['.png', '.jpg', '.jpeg', '.bmp'].includes(ext)) {
+            try {
+                const { data: { text: ocrText } } = await Tesseract.recognize(file.path, 'por');
+                text = ocrText;
+            } catch (ocrErr) {
+                console.error('[OCR ERROR]', ocrErr);
+                fs.unlinkSync(file.path);
+                return res.status(400).json({ error: 'Erro ao ler a imagem. Verifique se o arquivo está íntegro.' });
+            }
+        } else {
+            fs.unlinkSync(file.path);
+            return res.status(400).json({ error: 'Tipo de arquivo não suportado.' });
+        }
+        // Remove o arquivo após o processamento
+        fs.unlinkSync(file.path);
+        // Identifica valores duplicados
+        const duplicates = findDuplicateValues(text);
+        // Extrai todos os valores monetários
+        const allExtractedValues = extractAllValues(text);
+        res.json({ duplicates, allExtractedValues });
+    } catch (err) {
+        console.error('[UPLOAD INVOICE ERROR]', err);
+        res.status(500).json({ error: 'Erro ao processar o arquivo.' });
+    }
+});
+
+app.post('/api/simulator-tips', async (req, res) => {
+    // Desabilitado IA temporariamente
+    return res.status(503).json({ error: 'Funcionalidade de IA desabilitada temporariamente.' });
+    /*
+    try {
+        const { expenses } = req.body;
+        if (!expenses || !Array.isArray(expenses) || expenses.length === 0) {
+            return res.status(400).json({ error: 'Gastos não enviados.' });
+        }
+        // Montar prompt para a IA
+        const prompt = `Você é um consultor financeiro. Analise os seguintes gastos do usuário e gere 3 dicas práticas e personalizadas para economizar dinheiro. Liste as dicas de forma clara e objetiva.\n\nGastos:\n${expenses.map(e => '- ' + e).join('\n')}\n\nDicas:`;
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                { role: 'system', content: 'Você é um consultor financeiro especializado em economia doméstica.' },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 300,
+            temperature: 0.7
+        });
+        const tips = completion.choices[0].message.content.trim();
+        res.json({ tips });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao gerar dicas com IA.' });
+    }
+    */
+});
+
 // Para qualquer outra rota, serve o index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
@@ -199,4 +341,6 @@ async function deleteReport(id) {
         alert(error.message || 'Erro ao excluir relatório. Por favor, faça login novamente.');
         checkAuth();
     }
-} 
+}
+
+app.use(tipsRouter); 

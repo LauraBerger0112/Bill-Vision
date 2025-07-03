@@ -3,6 +3,9 @@ alert('JS está rodando!');
 
 let reports = [];
 let reportsChart = null;
+let duplicatesChart = null;
+let pdfCompareChart = null;
+let monthSummaryChart = null;
 const reportForm = document.getElementById('report-form');
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,19 +16,64 @@ document.addEventListener('DOMContentLoaded', () => {
     mainContent.classList.add('hidden');
 
     const themeToggle = document.getElementById('theme-toggle');
+    const authThemeToggle = document.getElementById('auth-theme-toggle');
     const body = document.body;
     
-    themeToggle.addEventListener('click', () => {
+    
+
+    function updateAllThemeIcons() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        if (sunIcon) sunIcon.style.display = currentTheme === 'dark' ? 'none' : 'block';
+        if (moonIcon) moonIcon.style.display = currentTheme === 'dark' ? 'block' : 'none';
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            document.body.removeAttribute('data-theme');
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+        updateAllThemeIcons();
+        updateChart && updateChart();
+    }
+
+    if (authThemeToggle) {
+        authThemeToggle.addEventListener('click', toggleTheme);
+        updateAllThemeIcons();
+    }
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        // Definir ícone inicial baseado no tema atual
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
         const currentTheme = body.getAttribute('data-theme');
         if (currentTheme === 'dark') {
-            body.removeAttribute('data-theme');
-            themeToggle.textContent = 'Tema Escuro';
+            if (sunIcon) sunIcon.style.display = 'none';
+            if (moonIcon) moonIcon.style.display = 'block';
         } else {
-            body.setAttribute('data-theme', 'dark');
-            themeToggle.textContent = 'Tema Claro';
+            if (sunIcon) sunIcon.style.display = 'block';
+            if (moonIcon) moonIcon.style.display = 'none';
         }
-        updateChart();
-    });
+    }
+    
+    if (authThemeToggle) {
+        authThemeToggle.addEventListener('click', toggleTheme);
+        // Definir ícone inicial baseado no tema atual
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const currentTheme = body.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            if (sunIcon) sunIcon.style.display = 'none';
+            if (moonIcon) moonIcon.style.display = 'block';
+        } else {
+            if (sunIcon) sunIcon.style.display = 'block';
+            if (moonIcon) moonIcon.style.display = 'none';
+        }
+    }
 
     const reportsTab = document.getElementById('reports-tab');
     const graphTab = document.getElementById('graph-tab');
@@ -37,8 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         reportsSection.classList.add('active-section');
         graphSection.classList.remove('active-section');
         graphSection.classList.add('hidden-section');
+        simulatorSection.classList.remove('active-section');
+        simulatorSection.classList.add('hidden-section');
         reportsTab.classList.add('active');
         graphTab.classList.remove('active');
+        simulatorTab.classList.remove('active');
     });
 
     graphTab.addEventListener('click', () => {
@@ -46,9 +97,29 @@ document.addEventListener('DOMContentLoaded', () => {
         graphSection.classList.add('active-section');
         reportsSection.classList.remove('active-section');
         reportsSection.classList.add('hidden-section');
+        simulatorSection.classList.remove('active-section');
+        simulatorSection.classList.add('hidden-section');
         graphTab.classList.add('active');
         reportsTab.classList.remove('active');
+        simulatorTab.classList.remove('active');
         updateChart();
+    });
+
+    const simulatorTab = document.getElementById('simulator-tab');
+    const simulatorSection = document.getElementById('simulator-section');
+    const simulatorContent = document.getElementById('simulator-content');
+
+    simulatorTab.addEventListener('click', () => {
+        reportsSection.classList.remove('active-section');
+        reportsSection.classList.add('hidden-section');
+        graphSection.classList.remove('active-section');
+        graphSection.classList.add('hidden-section');
+        simulatorSection.classList.remove('hidden-section');
+        simulatorSection.classList.add('active-section');
+        reportsTab.classList.remove('active');
+        graphTab.classList.remove('active');
+        simulatorTab.classList.add('active');
+        carregarSimuladorEconomico();
     });
 
     async function checkAuth() {
@@ -247,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Process expenses data
         const expensesByEstablishment = {};
         const expensesByMonth = {};
-        
         reports.forEach(report => {
             report.criticalExpenses.forEach(expense => {
                 const match = expense.match(/^(.+):\s*R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2})$/);
@@ -255,14 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const establishment = match[1].trim();
                     const value = parseFloat(match[2].replace('.', '').replace(',', '.'));
                     const month = report.referenceMonth;
-
-                    // Update total by establishment
                     if (!expensesByEstablishment[establishment]) {
                         expensesByEstablishment[establishment] = 0;
                     }
                     expensesByEstablishment[establishment] += value;
-
-                    // Update monthly data
                     if (!expensesByMonth[establishment]) {
                         expensesByMonth[establishment] = {};
                     }
@@ -273,12 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-
-        // Sort establishments by total expense
         const sortedEstablishments = Object.entries(expensesByEstablishment)
             .sort((a, b) => b[1] - a[1]);
-
-        // Calculate month-over-month changes
         const monthChanges = {};
         Object.entries(expensesByMonth).forEach(([establishment, monthlyData]) => {
             const months = Object.keys(monthlyData).sort();
@@ -291,15 +353,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthChanges[establishment] = change;
             }
         });
-
-        // Create ranking table
         const rankingContainer = document.getElementById('expenses-ranking');
         if (!rankingContainer) {
             const newRankingContainer = document.createElement('div');
             newRankingContainer.id = 'expenses-ranking';
             document.querySelector('.chart-wrapper').appendChild(newRankingContainer);
         }
-
         const rankingHTML = `
             <h3>Ranking de Gastos por Estabelecimento</h3>
             <table class="ranking-table">
@@ -323,10 +382,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tbody>
             </table>
         `;
-
         document.getElementById('expenses-ranking').innerHTML = rankingHTML;
-
-        // Continue with the existing chart code
+        // Adicionar o título fora da tabela, logo abaixo
+        let chartTitleDiv = document.getElementById('comparative-chart-title');
+        if (chartTitleDiv) chartTitleDiv.remove();
+        chartTitleDiv = document.createElement('div');
+        chartTitleDiv.className = 'chart-title';
+        chartTitleDiv.id = 'comparative-chart-title';
+        chartTitleDiv.textContent = 'Gráfico Comparativo de Dados Faturados';
+        // Inserir antes do gráfico de pizza
+        let pieChartCanvas = document.getElementById('pie-duplicates-chart');
+        if (pieChartCanvas && pieChartCanvas.parentNode) {
+            pieChartCanvas.parentNode.insertBefore(chartTitleDiv, pieChartCanvas);
+        }
+        // Gráfico mensal (barras agrupadas)
         const monthlyData = {};
         reports.forEach(report => {
             const month = report.referenceMonth;
@@ -335,13 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             monthlyData[month]++;
         });
-
         const sortedMonths = Object.keys(monthlyData).sort();
-
         const isDarkTheme = document.body.getAttribute('data-theme') === 'dark';
         const backgroundColor = isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(64, 64, 64, 0.5)';
         const borderColor = isDarkTheme ? 'rgba(255, 255, 255, 1)' : 'rgba(64, 64, 64, 1)';
-
         reportsChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -349,8 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Número de Relatórios',
                     data: sortedMonths.map(month => monthlyData[month]),
-                    backgroundColor: backgroundColor,
-                    borderColor: borderColor,
+                    backgroundColor: sortedMonths.map(month => backgroundColor),
+                    borderColor: sortedMonths.map(month => borderColor),
                     borderWidth: 1
                 }]
             },
@@ -385,6 +451,201 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        // Gráfico de pizza: proporção total de valores extraídos vs duplicados OU dados do PDF
+        pieChartCanvas = document.getElementById('pie-duplicates-chart');
+        if (!pieChartCanvas) {
+            pieChartCanvas = document.createElement('canvas');
+            pieChartCanvas.id = 'pie-duplicates-chart';
+            pieChartCanvas.style.maxWidth = '400px';
+            pieChartCanvas.style.margin = '32px auto 0 auto';
+            const chartWrapper = document.querySelector('.chart-wrapper');
+            chartWrapper.appendChild(pieChartCanvas);
+        }
+        if (window.pieDuplicatesChart) {
+            window.pieDuplicatesChart.destroy();
+        }
+        let totalExtraidos = 0;
+        let totalDuplicados = 0;
+        let pieTitle = 'Proporção de Valores Extraídos vs Duplicados';
+        // Se houver dados do PDF, usar eles
+        if (window.lastPdfCompareData && typeof window.lastPdfCompareData.total === 'number') {
+            totalExtraidos = window.lastPdfCompareData.total;
+            totalDuplicados = 0;
+            if (Array.isArray(window.lastPdfCompareData.duplicados)) {
+                window.lastPdfCompareData.duplicados.forEach(dup => {
+                    if (typeof dup === 'object' && dup.count) {
+                        totalDuplicados += (dup.count - 1); // só as repetições!
+                    }
+                });
+            }
+            if (totalDuplicados > totalExtraidos) totalDuplicados = totalExtraidos;
+            pieTitle = 'Proporção de Dados da Fatura PDF: Total vs Repetidos';
+            console.log('PIE DEBUG:', { totalExtraidos, totalDuplicados, duplicados: window.lastPdfCompareData.duplicados });
+        } else {
+            reports.forEach(report => {
+                if (report.allExtractedValues && Array.isArray(report.allExtractedValues)) {
+                    totalExtraidos += report.allExtractedValues.length;
+                }
+                if (report.duplicateValues && Array.isArray(report.duplicateValues)) {
+                    report.duplicateValues.forEach(dup => {
+                        if (dup.occurrences && Array.isArray(dup.occurrences)) {
+                            totalDuplicados += dup.occurrences.length;
+                        } else if (typeof dup === 'object' && dup.count) {
+                            totalDuplicados += dup.count;
+                        } else {
+                            totalDuplicados += 1;
+                        }
+                    });
+                }
+            });
+        }
+        if (totalDuplicados > totalExtraidos) totalDuplicados = totalExtraidos;
+        const totalUnicos = Math.max(0, totalExtraidos - totalDuplicados);
+        // Mensagem visual se não houver duplicados
+        if (totalExtraidos === 0) {
+            pieChartCanvas.style.display = 'none';
+            if (!document.getElementById('no-pie-data-msg')) {
+                const msg = document.createElement('div');
+                msg.id = 'no-pie-data-msg';
+                msg.style = 'color: #b00; font-size: 1.2em; margin: 24px 0; text-align: center;';
+                msg.textContent = 'Nenhum dado extraído do PDF para exibir no gráfico.';
+                pieChartCanvas.parentNode.appendChild(msg);
+            }
+            return;
+        } else {
+            pieChartCanvas.style.display = '';
+            const msg = document.getElementById('no-pie-data-msg');
+            if (msg) msg.remove();
+        }
+        window.pieDuplicatesChart = new Chart(pieChartCanvas, {
+            type: 'pie',
+            data: {
+                labels: ['Valores Únicos', 'Valores Repetidos'],
+                datasets: [{
+                    data: [totalUnicos, totalDuplicados],
+                    backgroundColor: [
+                        '#23395d', // Azul escuro principal
+                        '#4fc3f7'  // Azul claro para contraste
+                    ],
+                    borderColor: [
+                        '#1a2233', // Borda azul ainda mais escura
+                        '#1976d2'  // Azul intermediário
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: isDarkTheme ? '#ffffff' : '#23395d',
+                            font: {
+                                size: 18,
+                                family: 'Montserrat, Arial, sans-serif',
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    title: {
+                        display: false,
+                        text: pieTitle,
+                        color: '#25323a',
+                        font: { size: 24, family: 'Roboto, Arial, sans-serif', weight: 'bold' }
+                    },
+                    tooltip: {
+                        bodyFont: { size: 18, family: 'Montserrat, Arial, sans-serif' },
+                        titleFont: { size: 18, family: 'Montserrat, Arial, sans-serif', weight: 'bold' }
+                    }
+                }
+            }
+        });
+
+        // Após renderizar os gráficos, exibir detalhes dos duplicados
+        const duplicatesInfoSection = document.getElementById('duplicates-info-section');
+        const duplicatesInfoContainer = document.getElementById('duplicates-info-container');
+        // Se houver dados do PDF, mostrar detalhes dos duplicados do PDF
+        if (window.lastPdfCompareData && Array.isArray(window.lastPdfCompareData.duplicados) && window.lastPdfCompareData.duplicados.length > 0) {
+            duplicatesInfoSection.style.display = '';
+            let html = '';
+            let prejuizoTotal = 0;
+            html += `<h3>Fatura PDF</h3>`;
+            html += `<table class=\"duplicates-table\" style=\"background:#23395d;color:#fff;border-radius:10px;overflow:hidden;width:100%;margin-bottom:0;\"><thead><tr><th style=\"background:#1a2233;color:#fff;\">Valor Duplicado</th><th style=\"background:#1a2233;color:#fff;\">Ocorrências</th><th style=\"background:#1a2233;color:#fff;\">Descrição(s)</th><th style=\"background:#1a2233;color:#fff;\">Data(s)</th></tr></thead><tbody>`;
+            window.lastPdfCompareData.duplicados.forEach(dup => {
+                if (dup.occurrences && Array.isArray(dup.occurrences)) {
+                    const descList = dup.occurrences.map(o => `<li>${o.description || '-'}</li>`).join('');
+                    const dateList = dup.occurrences.map(o => `<li>${o.date || '-'}</li>`).join('');
+                    html += `<tr><td${(descList === '' ? ' style=\"color:#111;background:#fff;\"' : '')}>${dup.value || '-'} </td><td${(descList === '' ? ' style=\"color:#111;background:#fff;\"' : '')}>${dup.count || 2}</td><td${(descList === '' ? ' style=\"color:#111;background:#fff;\"' : '')}>${dup.occurrences && dup.occurrences.length ? dup.occurrences.map(o => o.description || '-').join(', ') : '-'}</td><td${(dateList === '' ? ' style=\"color:#111;background:#fff;\"' : '')}>${dup.occurrences && dup.occurrences.length ? dup.occurrences.map(o => o.date || '-').join(', ') : '-'}</td></tr>`;
+                    // Calcular prejuízo: (ocorrências - 1) * valor
+                    const valorNum = parseFloat((dup.value || '').replace(/[^\d,\.]/g, '').replace(',', '.'));
+                    if (!isNaN(valorNum)) {
+                        prejuizoTotal += (dup.count ? (dup.count - 1) : (dup.occurrences.length - 1)) * valorNum;
+                    }
+                } else {
+                    html += `<tr><td style=\"color:#111;background:#fff;\">${dup.value || dup}</td><td style=\"color:#111;background:#fff;\">${dup.count || 2}</td><td style=\"color:#111;background:#fff;\">-</td><td style=\"color:#111;background:#fff;\">-</td></tr>`;
+                    const valorNum = parseFloat((dup.value || dup).replace(/[^\d,\.]/g, '').replace(',', '.'));
+                    if (!isNaN(valorNum)) {
+                        prejuizoTotal += ((dup.count || 2) - 1) * valorNum;
+                    }
+                }
+            });
+            html += '</tbody></table>';
+            // Card de prejuízo total
+            html += `<div style=\"display:flex;justify-content:center;margin:40px 0 0 0;width:100%;\"><div style=\"background:linear-gradient(135deg,#23395d 60%,#1a2233 100%);color:#fff;padding:28px 44px;border-radius:18px;box-shadow:0 8px 32px #23395d44,0 2px 8px #23395d22;min-width:320px;max-width:480px;text-align:center;font-size:1.35em;font-weight:600;letter-spacing:0.5px;border:2px solid #183153;display:flex;align-items:center;gap:18px;\"><span style='font-size:2.7em;line-height:1;'>&#9888;</span> Prejuízo total com duplicidades: <span style='color:#4fc3f7;font-size:1.2em;font-weight:700;'>R$ ${prejuizoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></div>`;
+            duplicatesInfoContainer.innerHTML = html;
+        } else {
+            // Agrupar duplicados por mês dos relatórios
+            const duplicatesByMonth = {};
+            reports.forEach(report => {
+                if (report.duplicateValues && report.duplicateValues.length > 0) {
+                    if (!duplicatesByMonth[report.referenceMonth]) {
+                        duplicatesByMonth[report.referenceMonth] = [];
+                    }
+                    report.duplicateValues.forEach(dup => {
+                        if (typeof dup === 'string') {
+                            duplicatesByMonth[report.referenceMonth].push({ value: dup, count: 2 });
+                        } else {
+                            duplicatesByMonth[report.referenceMonth].push(dup);
+                        }
+                    });
+                }
+            });
+            if (Object.keys(duplicatesByMonth).length > 0) {
+                duplicatesInfoSection.style.display = '';
+                let html = '';
+                let prejuizoTotal = 0;
+                Object.entries(duplicatesByMonth).forEach(([month, dups]) => {
+                    html += `<h3>${formatMonthYear(month)}</h3>`;
+                    html += `<table class=\"duplicates-table\" style=\"background:#23395d;color:#fff;border-radius:10px;overflow:hidden;width:100%;margin-bottom:0;\"><thead><tr><th style=\"background:#1a2233;color:#fff;\">Valor Duplicado</th><th style=\"background:#1a2233;color:#fff;\">Ocorrências</th><th style=\"background:#1a2233;color:#fff;\">Descrição(s)</th><th style=\"background:#1a2233;color:#fff;\">Data(s)</th></tr></thead><tbody>`;
+                    dups.forEach(dup => {
+                        if (dup.occurrences && Array.isArray(dup.occurrences)) {
+                            const descList = dup.occurrences.map(o => `<li>${o.description || '-'}</li>`).join('');
+                            const dateList = dup.occurrences.map(o => `<li>${o.date || '-'}</li>`).join('');
+                            html += `<tr><td style=\"color:#111;background:#fff;\">${dup.value || '-'} </td><td style=\"color:#111;background:#fff;\">${dup.count || 2}</td><td style=\"color:#111;background:#fff;\">${dup.occurrences && dup.occurrences.length ? dup.occurrences.map(o => o.description || '-').join(', ') : '-'}</td><td style=\"color:#111;background:#fff;\">${dup.occurrences && dup.occurrences.length ? dup.occurrences.map(o => o.date || '-').join(', ') : '-'}</td></tr>`;
+                            // Calcular prejuízo: (ocorrências - 1) * valor
+                            const valorNum = parseFloat((dup.value || '').replace(/[^\d,\.]/g, '').replace(',', '.'));
+                            if (!isNaN(valorNum)) {
+                                prejuizoTotal += (dup.count ? (dup.count - 1) : (dup.occurrences.length - 1)) * valorNum;
+                            }
+                        } else {
+                            html += `<tr><td style=\"color:#111;background:#fff;\">${dup.value || dup}</td><td style=\"color:#111;background:#fff;\">${dup.count || 2}</td><td style=\"color:#111;background:#fff;\">-</td><td style=\"color:#111;background:#fff;\">-</td></tr>`;
+                            const valorNum = parseFloat((dup.value || dup).replace(/[^\d,\.]/g, '').replace(',', '.'));
+                            if (!isNaN(valorNum)) {
+                                prejuizoTotal += ((dup.count || 2) - 1) * valorNum;
+                            }
+                        }
+                    });
+                    html += '</tbody></table>';
+                });
+                // Card de prejuízo total
+                html += `<div style=\"display:flex;justify-content:center;margin:40px 0 0 0;width:100%;\"><div style=\"background:linear-gradient(135deg,#23395d 60%,#1a2233 100%);color:#fff;padding:28px 44px;border-radius:18px;box-shadow:0 8px 32px #23395d44,0 2px 8px #23395d22;min-width:320px;max-width:480px;text-align:center;font-size:1.35em;font-weight:600;letter-spacing:0.5px;border:2px solid #183153;display:flex;align-items:center;gap:18px;\"><span style='font-size:2.7em;line-height:1;'>&#9888;</span> Prejuízo total com duplicidades: <span style='color:#4fc3f7;font-size:1.2em;font-weight:700;'>R$ ${prejuizoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></div>`;
+                duplicatesInfoContainer.innerHTML = html;
+            } else {
+                duplicatesInfoSection.style.display = 'none';
+                duplicatesInfoContainer.innerHTML = '';
+            }
+        }
     }
 
     function updateSummaryTable(projectData) {
@@ -446,6 +707,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Authorization': `Bearer ${token}`
             };
         }
+        console.log('[fetchWithAuth] URL:', url);
+        console.log('[fetchWithAuth] Headers:', options.headers);
         return fetch(url, options);
     }
 
@@ -625,6 +888,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        // --- NOVO: Enviar PDF para checagem de duplicados ---
+        let duplicateValues = [];
+        let allExtractedValues = [];
+        const attachmentsInput = document.getElementById('attachments');
+        const files = attachmentsInput.files;
+        if (files.length > 0) {
+            // Só processa o primeiro PDF encontrado
+            const pdfFile = Array.from(files).find(f => f.type === 'application/pdf');
+            if (pdfFile) {
+                const formDataPDF = new FormData();
+                formDataPDF.append('invoice', pdfFile);
+                try {
+                    const response = await fetch('http://localhost:5000/api/upload-invoice', {
+                        method: 'POST',
+                        body: formDataPDF
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.duplicates && Array.isArray(data.duplicates)) {
+                            duplicateValues = data.duplicates;
+                        }
+                        if (data.allExtractedValues && Array.isArray(data.allExtractedValues)) {
+                            allExtractedValues = data.allExtractedValues;
+                        }
+                        // Exibir gráfico de comparação do PDF enviado
+                        const total = allExtractedValues.length;
+                        let duplicados = 0;
+                        if (duplicateValues.length > 0) {
+                            duplicateValues.forEach(dup => {
+                                if (dup.occurrences && Array.isArray(dup.occurrences)) {
+                                    duplicados += dup.occurrences.length;
+                                } else if (typeof dup === 'object' && dup.count) {
+                                    duplicados += dup.count;
+                                } else {
+                                    duplicados += 1;
+                                }
+                            });
+                        }
+                        if (duplicados > total) duplicados = total;
+                        console.log('DEBUG PDF:', { duplicateValues, duplicados, total });
+                        window.lastPdfCompareData = { total, duplicados: duplicateValues };
+                        updateChart();
+                    } else {
+                        alert('Não foi possível analisar o PDF para duplicidade. O relatório será salvo normalmente.');
+                    }
+                } catch (err) {
+                    alert('Erro ao enviar PDF para análise de duplicidade. O relatório será salvo normalmente.');
+                }
+            }
+        }
+        // --- FIM NOVO ---
+
         const formData = {
             projectName: document.getElementById('projectName').value,
             referenceMonth: document.getElementById('referenceMonth').value,
@@ -635,10 +951,12 @@ document.addEventListener('DOMContentLoaded', () => {
             companyExpenses: companyExpenses,
             plannedVsAchieved: document.getElementById('plannedVsAchieved').value,
             problems: document.getElementById('problems').value.split('\n'),
-            attachments: Array.from(document.getElementById('attachments').files).map(file => file.name),
-            currency: selectedCurrency
+            currency: selectedCurrency,
+            duplicateValues: duplicateValues, // <-- Adiciona os duplicados aqui
+            allExtractedValues: allExtractedValues // <-- Adiciona todos os valores extraídos aqui
         };
 
+        console.log('[Relatório] Dados enviados:', formData);
         try {
             const response = await fetchWithAuth('http://localhost:5000/api/reports', {
                 method: 'POST',
@@ -647,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(formData)
             });
-
+            console.log('[Relatório] Status da resposta:', response.status);
             if (response.ok) {
                 alert('Relatório enviado com sucesso!');
                 reportForm.reset();
@@ -656,15 +974,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Adicionar o primeiro campo de empresa novamente
                 addCompanyExpenseField();
 
+                // Salvar os gastos por empresa no localStorage para o simulador econômico
+                try {
+                    localStorage.setItem('simuladorGastos', JSON.stringify(companyExpenses.map(item => {
+                        // Tentar extrair nome e valor
+                        const match = item.match(/(.+):\s*(R\$|BRL|USD|EUR|GBP|ARS|BTC|\$|€|£)?\s*([\d,.]+)/);
+                        if (match) {
+                            return {
+                                descricao: match[1].trim(),
+                                categoria: 'Empresa',
+                                valor: parseFloat(match[3].replace('.', '').replace(',', '.'))
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean)));
+                } catch (e) { /* ignore */ }
+
                 const novoRelatorio = { ...formData };
                 const data = await response.json();
                 novoRelatorio._id = data._id || data.id;
-
+                novoRelatorio.duplicateValues = duplicateValues; // Salva duplicados no relatório
                 reports.push(novoRelatorio);
                 displayReports(reports);
                 updateChart();
             } else {
-                throw new Error('Erro ao enviar relatório');
+                const data = await response.json();
+                console.error('[Relatório] Erro do backend:', data);
+                throw new Error(data.message || 'Erro ao enviar relatório');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -757,33 +1093,6 @@ document.addEventListener('DOMContentLoaded', () => {
             totalValue.value = total.toFixed(2).replace('.', ',');
         }
     }
-
-    // Adicionar o container de gastos por empresa ao formulário
-    const companyExpensesSection = document.createElement('div');
-    companyExpensesSection.className = 'form-group';
-    companyExpensesSection.innerHTML = `
-        <label for="company-expenses">Gastos por Empresa</label>
-        <div id="company-expenses-container"></div>
-        <button type="button" class="add-expense-btn" onclick="addCompanyExpenseField()">Adicionar Empresa</button>
-        <div class="help-text">
-            <p>Adicione os gastos por empresa para gerar o ranking de despesas.</p>
-            <p>Exemplo de formato: Nome da Empresa: R$ 150,00</p>
-        </div>
-    `;
-
-    // Remover a seção de gastos críticos se existir
-    const criticalExpensesGroup = document.querySelector('#criticalExpenses')?.closest('.form-group');
-    if (criticalExpensesGroup) {
-        criticalExpensesGroup.remove();
-    }
-
-    // Adicionar a nova seção de gastos por empresa
-    const formGroups = document.querySelectorAll('.form-group');
-    const lastFormGroup = formGroups[formGroups.length - 1];
-    lastFormGroup.parentNode.insertBefore(companyExpensesSection, lastFormGroup.nextSibling);
-
-    // Adicionar o primeiro campo de gasto por empresa
-    addCompanyExpenseField();
 
     // Tornar a função addCompanyExpenseField global para que possa ser chamada pelo botão
     window.addCompanyExpenseField = addCompanyExpenseField;
@@ -904,4 +1213,299 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     popularMoedas();
+
+    function carregarSimuladorEconomico() {
+        let dadosUsuario = localStorage.getItem('simuladorGastos');
+        if (dadosUsuario) {
+            try {
+                const lancamentos = JSON.parse(dadosUsuario);
+                if (Array.isArray(lancamentos) && lancamentos.length > 0) {
+                    // Montar resumo dos gastos para IA
+                    const resumo = lancamentos.map(l => `${l.categoria}: R$${l.valor.toFixed(2)}`).join(', ');
+                    gerarDicasPersonalizadas(resumo);
+                    return;
+                }
+            } catch (e) { /* ignore */ }
+        }
+        fetch('simulador-data.json')
+            .then(response => response.json())
+            .then(lancamentos => {
+                const resumo = lancamentos.map(l => `${l.categoria}: R$${l.valor.toFixed(2)}`).join(', ');
+                gerarDicasPersonalizadas(resumo);
+            })
+            .catch(() => {
+                simulatorContent.innerHTML = '<p>Não foi possível carregar os dados do simulador.</p>';
+            });
+    }
+
+    async function gerarDicasPersonalizadas(gastosResumo) {
+        try {
+            const response = await fetch('http://localhost:5000/api/generate-tips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gastosResumo })
+            });
+            const data = await response.json();
+            if (data.dicas) {
+                document.getElementById('simulator-content').innerHTML = `
+                    <div style='display:flex;justify-content:center;margin-bottom:32px;'>
+                        <div style='background:#6b1831;border:1.5px solid #3d0d1a;padding:22px 28px;border-radius:10px;max-width:600px;box-shadow:0 4px 18px #0002;display:flex;align-items:center;gap:16px;'>
+                            <span style="font-size:2.1em;color:#fff;">&#9888;</span>
+                            <div>
+                                <h2 style='color:#fff;margin:0 0 8px 0;font-weight:700;'>Teste gratuito excedido</h2>
+                                <p style='color:#fff;margin:0;font-size:1.08em;'>O limite de uso gratuito da IA foi atingido.<br>Veja abaixo dicas manuais de economia:</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style='display:flex;flex-wrap:wrap;gap:28px;max-width:1200px;'>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Delivery:</b> Reduza para 2x/mês e economize</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 250/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Streaming:</b> Cancele 1 serviço e economize</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 50/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Transporte:</b> Use transporte público 50% do mês</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 120/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Compras online:</b> Reduza pela metade e economize</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 100/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Energia:</b> Troque por LED e desligue stand-by</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 40/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Cartão de crédito:</b> Evite parcelar pequenas compras</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 60/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Alimentação:</b> Cozinhe mais em casa e leve marmita</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 180/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Celular:</b> Revise seu plano e evite cobranças extras</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 30/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Farmácia:</b> Compare preços em diferentes redes antes de comprar</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 35/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Água:</b> Reduza banhos longos e conserte vazamentos</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 25/mês</div>
+                        </div>
+                        <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                            <div style='font-size:1.08em;color:#1a2233;'><b>Internet:</b> Negocie seu plano ou troque de operadora</div>
+                            <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 40/mês</div>
+                        </div>
+                    </div>
+                    <div style='margin-top:40px;font-size:1.1em;'>
+                        <b>Com essa economia mensal, você poderia fazer uma viagem em 6 meses, investir em algo novo ou criar uma reserva de emergência!</b>
+                    </div>
+                `;
+            } else {
+                exibirFallbackManual();
+            }
+        } catch (err) {
+            exibirFallbackManual();
+        }
+    }
+
+    function exibirFallbackManual() {
+        document.getElementById('simulator-content').innerHTML = `
+            <div style='display:flex;justify-content:center;margin-bottom:32px;'>
+                <div style='background:#6b1831;border:1.5px solid #3d0d1a;padding:22px 28px;border-radius:10px;max-width:600px;box-shadow:0 4px 18px #0002;display:flex;align-items:center;gap:16px;'>
+                    <span style="font-size:2.1em;color:#fff;">&#9888;</span>
+                    <div>
+                        <h2 style='color:#fff;margin:0 0 8px 0;font-weight:700;'>Teste gratuito excedido</h2>
+                        <p style='color:#fff;margin:0;font-size:1.08em;'>O limite de uso gratuito da IA foi atingido.<br>Veja abaixo dicas manuais de economia:</p>
+                    </div>
+                </div>
+            </div>
+            <div style='display:flex;flex-wrap:wrap;gap:28px;max-width:1200px;'>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Delivery:</b> Reduza para 2x/mês e economize</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 250/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Streaming:</b> Cancele 1 serviço e economize</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 50/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Transporte:</b> Use transporte público 50% do mês</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 120/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Compras online:</b> Reduza pela metade e economize</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 100/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Energia:</b> Troque por LED e desligue stand-by</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 40/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Cartão de crédito:</b> Evite parcelar pequenas compras</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 60/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Alimentação:</b> Cozinhe mais em casa e leve marmita</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 180/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Celular:</b> Revise seu plano e evite cobranças extras</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 30/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Farmácia:</b> Compare preços em diferentes redes antes de comprar</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 35/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Água:</b> Reduza banhos longos e conserte vazamentos</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 25/mês</div>
+                </div>
+                <div style="background:linear-gradient(145deg,#e6eefa 60%,#f5faff 100%);border-radius:20px;padding:28px 32px;box-shadow:0 8px 32px #0a2a4a22, 0 2px 8px #0a2a4a11;flex:1 1 340px;min-width:300px;display:flex;align-items:center;justify-content:space-between;border:1.5px solid #183153;transition:box-shadow .2s;">
+                    <div style='font-size:1.08em;color:#1a2233;'><b>Internet:</b> Negocie seu plano ou troque de operadora</div>
+                    <div style='font-weight:bold;font-size:1.2em;color:#17613a;'>R$ 40/mês</div>
+                </div>
+            </div>
+            <div style='margin-top:40px;font-size:1.1em;'>
+                <b>Com essa economia mensal, você poderia fazer uma viagem em 6 meses, investir em algo novo ou criar uma reserva de emergência!</b>
+            </div>
+        `;
+    }
+
+    // Botão de tema flutuante (login/cadastro)
+    const floatingThemeToggle = document.getElementById('floating-theme-toggle');
+    const floatingSunIcon = document.getElementById('floating-sun-icon');
+    const floatingMoonIcon = document.getElementById('floating-moon-icon');
+
+    function updateFloatingThemeIcon() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            if (floatingSunIcon) floatingSunIcon.style.display = 'none';
+            if (floatingMoonIcon) floatingMoonIcon.style.display = 'block';
+        } else {
+            if (floatingSunIcon) floatingSunIcon.style.display = 'block';
+            if (floatingMoonIcon) floatingMoonIcon.style.display = 'none';
+        }
+    }
+
+    if (floatingThemeToggle) {
+        floatingThemeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            updateFloatingThemeIcon();
+            updateChart && updateChart();
+        });
+        updateFloatingThemeIcon();
+    }
+
+    const loginThemeBtnWrapper = document.getElementById('login-theme-btn-wrapper');
+
+    function showLoginThemeBtn(show) {
+        if (loginThemeBtnWrapper) {
+            loginThemeBtnWrapper.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    // Inicialmente, mostra o botão flutuante se a tela de login estiver visível
+    showLoginThemeBtn(!mainContent || mainContent.classList.contains('hidden'));
+
+    // Quando autenticar, esconder o botão flutuante
+    async function checkAuth() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await fetchWithAuth('http://localhost:5000/api/auth/verify', { method: 'GET' });
+                if (response.ok) {
+                    authScreen.style.display = 'none';
+                    mainContent.classList.remove('hidden');
+                    showLoginThemeBtn(false);
+                    await loadReports();
+                    // ...restante do código...
+                } else {
+                    localStorage.removeItem('token');
+                    authScreen.style.display = 'flex';
+                    mainContent.classList.add('hidden');
+                    showLoginThemeBtn(true);
+                }
+            } catch (error) {
+                localStorage.removeItem('token');
+                authScreen.style.display = 'flex';
+                mainContent.classList.add('hidden');
+                showLoginThemeBtn(true);
+            }
+        } else {
+            authScreen.style.display = 'flex';
+            mainContent.classList.add('hidden');
+            showLoginThemeBtn(true);
+        }
+    }
+
+    const loginThemeToggle = document.getElementById('login-theme-toggle');
+    const loginSunIcon = document.getElementById('login-sun-icon');
+    const loginMoonIcon = document.getElementById('login-moon-icon');
+
+    function updateLoginThemeIcon() {
+        const currentTheme = document.body.getAttribute('data-theme');
+        if (loginSunIcon) loginSunIcon.style.display = currentTheme === 'dark' ? 'none' : 'block';
+        if (loginMoonIcon) loginMoonIcon.style.display = currentTheme === 'dark' ? 'block' : 'none';
+    }
+
+    if (loginThemeToggle) {
+        loginThemeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            updateLoginThemeIcon();
+            updateAllThemeIcons && updateAllThemeIcons();
+            updateChart && updateChart();
+        });
+        updateLoginThemeIcon();
+    }
+
+    console.log('Reports:', reports);
+
+    function displayRanking(rankingData) {
+        // ...
+    }
+
+    // Calcule primeiro
+    const establishmentTotals = {};
+    reports.forEach(report => {
+        if (report.companyExpenses && Array.isArray(report.companyExpenses)) {
+            report.companyExpenses.forEach(exp => {
+                if (!establishmentTotals[exp.name]) establishmentTotals[exp.name] = 0;
+                establishmentTotals[exp.name] += Number(exp.value) || 0;
+            });
+        }
+    });
+    const sortedEstablishments = Object.entries(establishmentTotals)
+        .sort((a, b) => b[1] - a[1]); // Maior gasto primeiro
+
+    // Só depois use ou faça log
+    console.log('sortedEstablishments:', sortedEstablishments);
+    console.log('reports:', reports);
+
+    console.log('lastPdfCompareData:', window.lastPdfCompareData);
+
+    window.lastPdfCompareData = {
+      total: 10,
+      duplicados: [
+        { value: "R$ 100,00", count: 3 },
+        { value: "R$ 50,00", count: 2 }
+      ]
+    };
+    updateChart();
 }); 
