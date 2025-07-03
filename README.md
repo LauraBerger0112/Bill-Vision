@@ -118,6 +118,7 @@ Files\MongoDB\Server\[versão]\data)
 Get-Service MongoDB
 
 Observações: 
+
 O simulador econômico funciona com base em uma Inteligência Artificial. Para melhor desempenho, seria necessário a versão paga. 
 A projeção de todo o código funciona, e já está pronta para uso. Entretanto, o uso das aplicações gratuitasjá foi excedido. 
 Nessa página também, temos algumas sugestões manuais para o usuário.
@@ -127,4 +128,5 @@ Essa alteração precisa ser feita no backend e não pode ser previamente feita 
 
 Projeto desenvolvido por:
 Gabriella Alves da Silva, Laura Liuti Berger e Melissa Magalhães Belmiro.
+
 2° ano de Desenvolvimento de Sistemas da ETEC Jorge Street.
